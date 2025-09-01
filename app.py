@@ -1,14 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, make_response
+from werkzeug.security import generate_password_hash, check_password_hash
+from pymongo import MongoClient
 import jwt
 import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "supersecretkey"  # change this in production!
+app.config['SECRET_KEY'] = "supersecretkey"  # ⚠️ change in production
 
-# Fake in-memory database
-users = {}  # {username: password_hash}
+# --- MongoDB setup ---
+client = MongoClient("mongodb://localhost:27017/")  # or your MongoDB Atlas URI
+db = client["flask_jwt_auth"]
+users_collection = db["users"]
 
+# --- JWT helper functions ---
 def generate_jwt(username):
     payload = {
         "user": username,
@@ -32,6 +36,7 @@ def get_current_user(request):
             return data["user"]
     return None
 
+# --- Routes ---
 @app.route("/")
 def home():
     user = get_current_user(request)
@@ -45,11 +50,15 @@ def signup():
         username = request.form["username"]
         password = request.form["password"]
 
-        if username in users:
+        existing_user = users_collection.find_one({"username": username})
+        if existing_user:
             return "User already exists!"
-        
-        # ✅ store password securely
-        users[username] = generate_password_hash(password)
+
+        password_hash = generate_password_hash(password)
+        users_collection.insert_one({
+            "username": username,
+            "password": password_hash
+        })
         return redirect(url_for("login"))
 
     return render_template("signup.html")
@@ -60,14 +69,15 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        if username in users and check_password_hash(users[username], password):
+        user = users_collection.find_one({"username": username})
+        if user and check_password_hash(user["password"], password):
             token = generate_jwt(username)
             resp = make_response(redirect(url_for("dashboard")))
             resp.set_cookie("token", token, httponly=True)
             return resp
 
         return "Invalid credentials!"
-    
+
     return render_template("login.html")
 
 @app.route("/dashboard")
