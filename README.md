@@ -1,1 +1,1 @@
-# 0weeks_team2
+입학시험 [링크메모장](https://kraftonjungle.notion.site/Chapter-4-4ab9bb5d065048b596d21e8fd5e4b708) 코드
