@@ -6,10 +6,11 @@
 {% if user.profile_img %}
     <div>
         <img src="{{ url_for('static', filename='profile_imgs/' ~ user.profile_img) }}" 
-             alt="Profile Image" width="150" style="border-radius: 50%;">
+             alt="파일이 없어요"
+             width="150" style="border-radius: 50%;">
     </div>
-    <p>{{ url_for('static', filename='profile_imgs/' ~ user.profile_img.split('/\\')[-1])}}</p>
 {% else %}
     <p>No profile image uploaded.</p>
 {% endif %}
+<a href="{{ url_for('logout') }}">Logout</a>
 {% endblock %}
