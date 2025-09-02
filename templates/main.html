@@ -119,6 +119,17 @@
   color: #00c32e;    /* Bulma primary 파랑색 */
 }
 
+.avatar-frame {
+  width: 128px;              /* 아바타 크기 */
+  height: 128px;
+  border-radius: 50%;        /* 원형 */
+  background-size: cover;    /* 이미지 꽉 채우기 */
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 3px solid #fff;    /* 흰색 테두리 (선택사항) */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* 그림자 (선택사항) */
+}
+
 </style>
 </head>
 <body>
@@ -156,6 +167,49 @@
     <!-- 🟢 항상 무대 위에 떠 있는 버튼 -->
     <button class="button is-dark is-light nav-btn" id="prev" aria-label="이전">◀</button>
     <button class="button is-dark is-light nav-btn" id="next" aria-label="다음">▶</button>
+  </div>
+</section>
+<!-- 🟢 Best Team Section -->
+<section class="section">
+  <div class="container">
+
+    <!-- 🥇 1등 박스 (멤버 아바타 포함) -->
+    <div class="notification is-success mb-4">
+  <span class="tag is-light is-success mr-2">1등</span>팀명
+  <div class="card-content has-text-centered mt-3">
+    <div class="columns is-centered">
+      <div class="column is-narrow">
+        <div class="avatar-frame" style="background-image: url('images/member1.png');"></div>
+      </div>
+      <div class="column is-narrow">
+        <div class="avatar-frame" style="background-image: url('images/member2.png');"></div>
+      </div>
+      <div class="column is-narrow">
+        <div class="avatar-frame" style="background-image: url('images/member3.png');"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+    <!-- 🥈 2등 -->
+    <div class="notification is-success mb-3">
+      <span class="tag is-light is-success mr-2">2등</span>
+      팀명
+    </div>
+
+    <!-- 🥉 3등 -->
+    <div class="notification is-success mb-3">
+      <span class="tag is-light is-success mr-2">3등</span>
+      팀명
+    </div>
+
+    <!-- 4등 -->
+    <div class="notification is-success">
+      <span class="tag is-light is-success mr-2">4등</span>
+      팀명
+    </div>
   </div>
 </section>
 
