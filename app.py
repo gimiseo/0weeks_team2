@@ -106,7 +106,7 @@ def dashboard():
     user = users_collection.find_one({"username": username})
     if not user:
         return redirect(url_for("login"))
-    return render_template("dashboard.html", user=user)
+    return render_template("testing.html", user=user)
 
 @app.route("/logout")
 def logout():
@@ -116,28 +116,52 @@ def logout():
 
 @app.route("/teamsignup", methods=["GET", "POST"])
 def teamsignup():
-    user = get_current_user(request)
-    if not user:
+    username = get_current_user(request)
+    if not username:
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        team_name = request.form["username"]  # 팀 이름
-        week = request.form["week"]
+        team_name = request.form["team_name"]  # 팀 이름
+        week = int(request.form["week"])      # 주차를 int로 변환
         team_password = request.form["team_password"]
 
-        existing_team = db["teams"].find_one({"team_name": team_name})
-        if existing_team:
-            return "팀 이름이 이미 존재합니다!"
-
-        team_password_hash = generate_password_hash(team_password)
-
-        db["teams"].insert_one({
-            "team_name": team_name,
-            "week": week,
-            "password": team_password_hash,
-            "created_by": user,
-            "created_at": datetime.datetime.utcnow()
+        # 같은 주차에 같은 이름의 팀이 있는지 확인
+        existing_team = db["teams"].find_one({
+            "teamName": team_name,
+            "week": week
         })
+        if existing_team:
+            return f"{week}주차에 '{team_name}' 팀 이름이 이미 존재합니다!"
+
+        # 비밀번호 해시화
+        room_password_hash = generate_password_hash(team_password)
+        
+        # 현재 사용자 정보 조회
+        current_user = users_collection.find_one({"username": username})
+        if not current_user:
+            return redirect(url_for("login"))
+
+        # 새로운 팀 생성 (MongoDB 구조에 맞게)
+        new_team = {
+            "teamName": team_name,
+            "description": f"{week}주차 스터디 팀",  # 기본 설명
+            "week": week,
+            "roomPasswordHash": room_password_hash,
+            "masterId": current_user["_id"],
+            "createdAt": datetime.datetime.utcnow(),
+            "upvote": 0,  # 초기 추천수 0
+            "members": [
+                {
+                    "userId": current_user["_id"],
+                    "role": "master",
+                    "joinedAt": datetime.datetime.utcnow()
+                }
+            ],
+            "posts": []  # 빈 게시물 배열로 시작
+        }
+
+        # 팀을 데이터베이스에 삽입
+        db["teams"].insert_one(new_team)
 
         return redirect(url_for("dashboard"))
 
@@ -147,8 +171,60 @@ def teamsignup():
 def mainpage():
     return render_template("mainpage.html")
 
-@app.route("/teamjoin")
+@app.route("/teamjoin", methods=["GET", "POST"])
 def teamjoin():
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        week = int(request.form["week"])
+        team_password = request.form["team_password"]
+        
+        # 현재 사용자 정보 조회
+        current_user = users_collection.find_one({"username": username})
+        if not current_user:
+            return redirect(url_for("login"))
+        
+        # 해당 주차의 모든 팀 조회
+        teams_in_week = list(db["teams"].find({"week": week}))
+        
+        if not teams_in_week:
+            return f"{week}주차에 생성된 팀이 없습니다!"
+        
+        # 비밀번호가 맞는 팀 찾기
+        target_team = None
+        for team in teams_in_week:
+            if check_password_hash(team["roomPasswordHash"], team_password):
+                target_team = team
+                break
+        
+        if not target_team:
+            return f"{week}주차에 해당 비밀번호를 가진 팀이 없습니다!"
+        
+        # 이미 해당 팀의 멤버인지 확인
+        is_already_member = any(
+            member["userId"] == current_user["_id"] 
+            for member in target_team["members"]
+        )
+        
+        if is_already_member:
+            return f"이미 '{target_team['teamName']}' 팀의 멤버입니다!"
+        
+        # 새 멤버를 팀에 추가
+        new_member = {
+            "userId": current_user["_id"],
+            "role": "member",
+            "joinedAt": datetime.datetime.utcnow()
+        }
+        
+        db["teams"].update_one(
+            {"_id": target_team["_id"]},
+            {"$push": {"members": new_member}}
+        )
+        
+        return f"'{target_team['teamName']}' 팀에 성공적으로 가입되었습니다!"
+
     return render_template("teamjoin.html")
 
 if __name__ == "__main__":
