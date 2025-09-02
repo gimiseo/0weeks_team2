@@ -110,5 +110,35 @@ def logout():
     resp.set_cookie("token", "", expires=0)
     return resp
 
+@app.route("/teamsignup", methods=["GET", "POST"])
+def teamsignup():
+    user = get_current_user(request)
+    if not user:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        team_name = request.form["username"]  # 팀 이름
+        week = request.form["week"]
+        team_password = request.form["team_password"]
+
+        existing_team = db["teams"].find_one({"team_name": team_name})
+        if existing_team:
+            return "팀 이름이 이미 존재합니다!"
+
+        team_password_hash = generate_password_hash(team_password)
+
+        db["teams"].insert_one({
+            "team_name": team_name,
+            "week": week,
+            "password": team_password_hash,
+            "created_by": user,
+            "created_at": datetime.datetime.utcnow()
+        })
+
+        return redirect(url_for("dashboard"))
+
+    return render_template("teamsignup.html")
+
+
 if __name__ == "__main__":
     app.run(debug=True)
