@@ -46,7 +46,7 @@ def get_current_user(request):
 def home():
     user = get_current_user(request)
     if user:
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("main_page"))
     return redirect(url_for("login"))
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -92,7 +92,7 @@ def login():
         user = users_collection.find_one({"username": username})
         if user and check_password_hash(user["password"], password):
             token = generate_jwt(username)
-            resp = make_response(redirect(url_for("mainpage")))
+            resp = make_response(redirect(url_for("main_page")))
             resp.set_cookie("token", token, httponly=True)
             return resp
 
@@ -114,8 +114,8 @@ def logout():
     resp.set_cookie("token", "", expires=0)
     return resp
 
-@app.route("/teamsignup", methods=["GET", "POST"])
-def teamsignup():
+@app.route("/team_signup", methods=["GET", "POST"])
+def team_signup():
     username = get_current_user(request)
     if not username:
         return redirect(url_for("login"))
@@ -165,14 +165,14 @@ def teamsignup():
 
         return redirect(url_for("dashboard"))
 
-    return render_template("teamsignup.html")
+    return render_template("team_signup.html")
 
-@app.route("/mainpage")
-def mainpage():
-    return render_template("mainpage.html")
+@app.route("/main_page")
+def main_page():
+    return render_template("main_page.html")
 
-@app.route("/teamjoin", methods=["GET", "POST"])
-def teamjoin():
+@app.route("/team_join", methods=["GET", "POST"])
+def team_join():
     username = get_current_user(request)
     if not username:
         return redirect(url_for("login"))
@@ -223,9 +223,10 @@ def teamjoin():
             {"$push": {"members": new_member}}
         )
         
-        return f"'{target_team['teamName']}' 팀에 성공적으로 가입되었습니다!"
+        success_message = f"'{target_team['teamName']}' 팀에 성공적으로 가입되었습니다!"
+        return f'<script>alert("{success_message}"); window.location.href="{url_for("dashboard")}";</script>'
 
-    return render_template("teamjoin.html")
+    return render_template("team_join.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
