@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bulma 3D 카드 캐러셀 – 표준 버튼 동작(Non-loop)</title>
+
+<!-- Bulma CSS 불러오기 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+
+<style>
+  /* =========================
+     🔧 카드/무대 관련 CSS 변수
+     ========================= */
+  :root{
+    --card-w: 240px;   /* 카드 너비 */
+    --card-h: 320px;   /* 카드 높이 */
+    --gap-x: 140px;    /* 카드 간 좌우 간격 (작게 → 더 겹쳐 보임) */
+    --z-center: 220px; /* 중앙 카드 깊이 */
+    --z-near: 120px;   /* 바로 옆 카드 깊이 */
+    --z-far: 40px;     /* 그 외 카드 깊이 */
+    --stage-h: 520px;  /* 무대 높이 */
+  }
+
+  .top-menu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+}
+
+.logout-text {
+  margin-left: 8px;      /* 마이페이지 버튼과 간격 */
+  font-weight: 600;
+  color: #363636;        /* Bulma 기본 글자색 */
+  cursor: pointer;       /* 마우스 오버시 손가락 표시 */
+}
+
+.logout-text:hover {
+  color: #ff3860;        /* hover 시 Bulma danger 색상 */
+}
+  body { background:#f6fbf9; }
+
+  /* 전체 캐러셀 컨테이너 */
+  .carousel-3d {
+    max-width: 980px;
+    margin: 56px auto;
+    padding: 12px 8px;
+  }
+
+  /* 카드 무대(Stage) */
+  .stage {
+    position: relative;            /* 내부 버튼 absolute 배치용 기준 */
+    height: var(--stage-h);
+    perspective: 1000px;           /* 3D 원근감 */
+    overflow: visible;
+    display: grid;
+    place-items: center;
+  }
+
+  /* 개별 카드 */
+  .stage .item {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: var(--card-w); height: var(--card-h);
+    border-radius: 18px;
+    display: grid; place-items: center;
+    transform: translate(-50%,-50%); /* 무대 중앙 정렬 */
+    will-change: transform, opacity; /* 애니메이션 성능 최적화 */
+    transition: transform .35s ease, opacity .25s ease, box-shadow .25s ease;
+    user-select: none;
+  }
+
+
+  /* Bulma 버튼 기본 크기 조정 */
+  .nav-btn.button {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .nav-btn[disabled] { opacity:.35; pointer-events: none; }
+
+  /* 🟢 버튼을 무대 위에 띄우는 CSS */
+  .stage .nav-btn {
+    position: absolute;
+    top: 50%;                       /* 무대 세로 중앙 */
+    transform: translateY(-50%);    /* 정확히 중앙 정렬 */
+    z-index: 999;                   /* 카드보다 항상 위 */
+  }
+  #prev { left: 16px; }             /* 왼쪽 버튼 위치 */
+  #next { right: 16px; }            /* 오른쪽 버튼 위치 */
+
+  /* 데모 카드 스타일 (임시 콘텐츠 박스) */
+.demo-card {
+  width: 82%; height: 62%;
+  border-radius: 16px;
+  background: rgb(137, 235, 137);   /* ← 단순한 초록색 */
+  border: 1px solid rgb(116, 243, 116);  /* 짙은 초록 테두리 (선택사항) */
+  display: grid; place-items: center;
+  font-size: 18px; font-weight: 700; color:#fff; /* 글자는 흰색으로 */
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+}
+.mypage-btn {
+  position: fixed;
+  top: 10px;
+  right: 16px;
+  z-index: 1000;  /* 카드/버튼보다 위 */
+}
+
+.wwl-label {
+  position: fixed;   /* 화면 고정 */
+  top: 10px;         /* 상단 여백 */
+  left: 16px;        /* 좌측 여백 */
+  z-index: 2000;     /* 다른 요소보다 위 */
+  font-size: 30px;   /* 글자 크기 */
+  font-weight: 700;  /* 굵게 */
+  color: #00c32e;    /* Bulma primary 파랑색 */
+}
+
+</style>
+</head>
+<body>
+    <div class="wwl-label">WeeklyWeLearned</div>
+<div class="top-menu">
+  <a href="#mypage" class="button is-primary">마이페이지</a>
+  <span class="logout-text">로그아웃</span>
+</div>
+<section class="carousel-3d" role="region" aria-roledescription="carousel" aria-label="프로젝트 카드 캐러셀 (표준 버튼 동작)">
+  <!-- 🎭 무대 -->
+  <div class="stage" id="stage" aria-live="polite">
+    <!-- ✅ 카드들 (내용은 .demo-card 내부 교체 가능) -->
+    <article class="item card-0"><div class="demo-card">week0</div></article>
+<article class="item card-1"><div class="demo-card">week1</div></article>
+<article class="item card-2"><div class="demo-card">week2</div></article>
+<article class="item card-3"><div class="demo-card">week3</div></article>
+<article class="item card-4"><div class="demo-card">week4</div></article>
+<article class="item card-5"><div class="demo-card">week5</div></article>
+<article class="item card-6"><div class="demo-card">week6</div></article>
+<article class="item card-7"><div class="demo-card">week7</div></article>
+<article class="item card-8"><div class="demo-card">week8</div></article>
+<article class="item card-9"><div class="demo-card">week9</div></article>
+<article class="item card-10"><div class="demo-card">week10</div></article>
+<article class="item card-11"><div class="demo-card">week11</div></article>
+<article class="item card-12"><div class="demo-card">week12</div></article>
+<article class="item card-13"><div class="demo-card">week13</div></article>
+<article class="item card-14"><div class="demo-card">week14</div></article>
+<article class="item card-15"><div class="demo-card">week15</div></article>
+<article class="item card-16"><div class="demo-card">week16</div></article>
+<article class="item card-17"><div class="demo-card">week17</div></article>
+<article class="item card-18"><div class="demo-card">week18</div></article>
+<article class="item card-19"><div class="demo-card">week19</div></article>
+<article class="item card-20"><div class="demo-card">week20</div></article>
+
+    <!-- 🟢 항상 무대 위에 떠 있는 버튼 -->
+    <button class="button is-dark is-light nav-btn" id="prev" aria-label="이전">◀</button>
+    <button class="button is-dark is-light nav-btn" id="next" aria-label="다음">▶</button>
+  </div>
+</section>
+
+<script>
+  /* =========================
+     JS 요소/상태 초기화
+     ========================= */
+  const stage  = document.getElementById('stage');
+  const items  = Array.from(stage.querySelectorAll('.item'));
+  const prev   = document.getElementById('prev');
+  const next   = document.getElementById('next');
+
+  let index = 0; // 현재 중앙 카드 인덱스
+
+  // 유틸: 값 클램프
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  // CSS 변수 읽기
+  const getVar = (name) =>
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace('px','');
+
+  /* =========================
+     렌더링 함수
+     ========================= */
+  function render() {
+    const gapX     = parseFloat(getVar('--gap-x'));
+    const Z_CENTER = parseFloat(getVar('--z-center'));
+    const Z_NEAR   = parseFloat(getVar('--z-near'));
+    const Z_FAR    = parseFloat(getVar('--z-far'));
+
+    items.forEach((el, i) => {
+      const off = i - index;   // 중앙 기준 상대 위치
+      const abs = Math.abs(off);
+
+      // 위치/깊이/스케일/투명도 계산
+      const x       = off * gapX;
+      const depth   = (off === 0) ? Z_CENTER : (abs === 1 ? Z_NEAR : Z_FAR);
+      const scale   = (off === 0) ? 1 : (abs === 1 ? 0.96 : 0.9);
+      const opacity = 1
+
+      // CSS transform 적용
+      el.style.transform = `translate(-50%,-50%) translate3d(${x}px, 0, ${depth}px) scale(${scale})`;
+      el.style.opacity   = opacity;
+      el.style.zIndex    = String(100 - abs * 10);
+      el.classList.toggle('is-center', off === 0);
+    });
+
+    updateButtons();
+  }
+
+  /* =========================
+     이동 함수
+     ========================= */
+  function go(dir) {
+    const n = stage.querySelectorAll('.item').length; // 카드 수
+    index = Math.max(0, Math.min(index + dir, n - 1)); // 인덱스 갱신 (클램프)
+    render();
+  }
+
+  /* =========================
+     버튼 상태 업데이트
+     ========================= */
+  function updateButtons() {
+    const n = stage.querySelectorAll('.item').length;
+    prev.disabled = (index === 0);       // 맨 왼쪽이면 prev 비활성
+    next.disabled = (index === n - 1);   // 맨 오른쪽이면 next 비활성
+  }
+
+  /* =========================
+     이벤트 등록
+     ========================= */
+  prev.addEventListener('click', () => go(-1));
+  next.addEventListener('click', () => go(1));
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft')  go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+
+  // 스와이프 제스처 지원
+  let startX = null;
+  let tracking = false;
+  const onStart = (x) => { startX = x; tracking = true; };
+  const onMove  = (x) => {
+    if (!tracking || startX === null) return;
+    const dx = x - startX;
+    if (Math.abs(dx) > 48) {
+      if (dx < 0) go(1); else go(-1);
+      tracking = false; startX = null;
+    }
+  };
+  const onEnd   = () => { tracking = false; startX = null; };
+
+  stage.addEventListener('pointerdown', e => onStart(e.clientX));
+  stage.addEventListener('pointermove',  e => onMove(e.clientX));
+  stage.addEventListener('pointerup', onEnd);
+  stage.addEventListener('pointerleave', onEnd);
+  stage.addEventListener('pointercancel', onEnd);
+
+  // 첫 렌더링 실행
+  render();
+</script>
+</body>
+</html>
