@@ -110,7 +110,7 @@ def logout():
     resp.set_cookie("token", "", expires=0)
     return resp
 
-@app.route("/teamsignup", methods=["GET", "POST"])
+@app.route("/teamsignup", methods=["GET", "POST"]) # 팀 생성 API
 def teamsignup():
     user = get_current_user(request)
     if not user:
@@ -138,6 +138,35 @@ def teamsignup():
         return redirect(url_for("dashboard"))
 
     return render_template("teamsignup.html")
+
+@app.route("/teamjoin", methods=["GET", "POST"])  # 팀 합류 API
+def teamjoin():
+    user = get_current_user(request)
+    if not user:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        week = int(request.form["week"])
+        team_password = request.form["team_password"]
+
+        # 이미 생성된 팀 정보 가져오기 (week 기준)
+        team = db["teams"].find_one({"week": week})
+        if not team:
+            return "해당 주차에 생성된 팀이 없습니다!"
+
+        # 비밀번호 확인
+        if not check_password_hash(team["password"], team_password):
+            return "팀 비밀번호가 올바르지 않습니다!"
+
+        # 팀 가입 처리 (예: members 배열에 추가)
+        db["teams"].update_one(
+            {"_id": team["_id"]},
+            {"$addToSet": {"members": user}}
+        )
+
+        return redirect(url_for("dashboard"))
+
+    return render_template("teamjoin.html")
 
 
 if __name__ == "__main__":
