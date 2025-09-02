@@ -1,151 +1,209 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Weekly We Learned</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-<link rel="stylesheet" href="/static/mainpage.css">
-
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weekly We Learned</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="/static/mainpage.css">
 </head>
 <body>
-  <div class="wwl-label">WeeklyWeLearned</div>
-  <div class="top-menu">
-    <a href="#mypage" class="button is-primary">마이페이지</a>
-    <span class="logout-text">로그아웃</span>
-  </div>
-
-  <div class="main-wrap container is-fluid">
-    <!-- ★ columns 를 정확히 반씩(is-6/is-6) + is-vcentered 로 세로 중앙 -->
-    <div class="columns is-variable is-6 is-vcentered split-row">
-      
-      <!-- 좌측 50% : 캐러셀 (가운데 정렬) -->
-      <div class="column is-6">
-        <div class="half-center">
-          <div class="panel-inner">
-            <div class="stage-viewport">
-              <div class="stage" id="stage" aria-live="polite">
-                <!-- week0 ~ week20 -->
-                <article class="item card-0"><div class="demo-card">week0</div></article>
-                <article class="item card-1"><div class="demo-card">week1</div></article>
-                <article class="item card-2"><div class="demo-card">week2</div></article>
-                <article class="item card-3"><div class="demo-card">week3</div></article>
-                <article class="item card-4"><div class="demo-card">week4</div></article>
-                <article class="item card-5"><div class="demo-card">week5</div></article>
-                <article class="item card-6"><div class="demo-card">week6</div></article>
-                <article class="item card-7"><div class="demo-card">week7</div></article>
-                <article class="item card-8"><div class="demo-card">week8</div></article>
-                <article class="item card-9"><div class="demo-card">week9</div></article>
-                <article class="item card-10"><div class="demo-card">week10</div></article>
-                <article class="item card-11"><div class="demo-card">week11</div></article>
-                <article class="item card-12"><div class="demo-card">week12</div></article>
-                <article class="item card-13"><div class="demo-card">week13</div></article>
-                <article class="item card-14"><div class="demo-card">week14</div></article>
-                <article class="item card-15"><div class="demo-card">week15</div></article>
-                <article class="item card-16"><div class="demo-card">week16</div></article>
-                <article class="item card-17"><div class="demo-card">week17</div></article>
-                <article class="item card-18"><div class="demo-card">week18</div></article>
-                <article class="item card-19"><div class="demo-card">week19</div></article>
-                <article class="item card-20"><div class="demo-card">week20</div></article>
-              </div>
-              <button class="button is-dark is-light nav-btn" id="prev" aria-label="이전(위)">▲</button>
-              <button class="button is-dark is-light nav-btn" id="next" aria-label="다음(아래)">▼</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 우측 50% : 팀 리스트 (가운데 정렬) -->
-      <div class="column is-6 team-column">
-        <div class="half-center">
-          <div class="panel-inner team-stack">
-            {% for i in range(10) %}
-            <div class="notification is-success mb-4">
-              <div class="is-flex is-align-items-center is-justify-content-space-between">
-                <div class="has-text-weight-semibold">1등 팀명</div>
-                <div class="is-flex is-align-items-center">
-                  <div class="avatar-frame mr-2" style="background-image:url('images/member1.png');"></div>
-                  <div class="avatar-frame mr-2" style="background-image:url('images/member2.png');"></div>
-                  <div class="avatar-frame" style="background-image:url('images/member3.png');"></div>
-                </div>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-
+    <div class="wwl-label">WeeklyWeLearned</div>
+    <div class="top-menu">
+        <a href="#mypage" class="button is-primary">마이페이지</a>
+        <span class="logout-text">로그아웃</span>
     </div>
-  </div>
 
-<script>
-  const stage = document.getElementById('stage');
-  const items = Array.from(stage.querySelectorAll('.item'));
-  const prev  = document.getElementById('prev');
-  const next  = document.getElementById('next');
-  let index = 0;
+    <div class="main-wrap container is-fluid">
+        <!-- columns 를 정확히 반씩(is-6/is-6) + is-vcentered 로 세로 중앙 -->
+        <div class="columns is-variable is-6 is-vcentered split-row">
+            
+            <!-- 좌측 50% : 캐러셀 (가운데 정렬) -->
+            <div class="column is-6">
+                <div class="half-center">
+                    <div class="panel-inner">
+                        <div class="stage-viewport">
+                            <div class="stage" id="stage" aria-live="polite">
+                                <!-- week0 ~ week20 -->
+                                <article class="item card-0">
+                                    <div class="demo-card">week0</div>
+                                </article>
+                                <article class="item card-1">
+                                    <div class="demo-card">week1</div>
+                                </article>
+                                <article class="item card-2">
+                                    <div class="demo-card">week2</div>
+                                </article>
+                                <article class="item card-3">
+                                    <div class="demo-card">week3</div>
+                                </article>
+                                <article class="item card-4">
+                                    <div class="demo-card">week4</div>
+                                </article>
+                                <article class="item card-5">
+                                    <div class="demo-card">week5</div>
+                                </article>
+                                <article class="item card-6">
+                                    <div class="demo-card">week6</div>
+                                </article>
+                                <article class="item card-7">
+                                    <div class="demo-card">week7</div>
+                                </article>
+                                <article class="item card-8">
+                                    <div class="demo-card">week8</div>
+                                </article>
+                                <article class="item card-9">
+                                    <div class="demo-card">week9</div>
+                                </article>
+                                <article class="item card-10">
+                                    <div class="demo-card">week10</div>
+                                </article>
+                                <article class="item card-11">
+                                    <div class="demo-card">week11</div>
+                                </article>
+                                <article class="item card-12">
+                                    <div class="demo-card">week12</div>
+                                </article>
+                                <article class="item card-13">
+                                    <div class="demo-card">week13</div>
+                                </article>
+                                <article class="item card-14">
+                                    <div class="demo-card">week14</div>
+                                </article>
+                                <article class="item card-15">
+                                    <div class="demo-card">week15</div>
+                                </article>
+                                <article class="item card-16">
+                                    <div class="demo-card">week16</div>
+                                </article>
+                                <article class="item card-17">
+                                    <div class="demo-card">week17</div>
+                                </article>
+                                <article class="item card-18">
+                                    <div class="demo-card">week18</div>
+                                </article>
+                                <article class="item card-19">
+                                    <div class="demo-card">week19</div>
+                                </article>
+                                <article class="item card-20">
+                                    <div class="demo-card">week20</div>
+                                </article>
+                            </div>
+                            <button class="button is-dark is-light nav-btn" id="prev" aria-label="이전(위)">▲</button>
+                            <button class="button is-dark is-light nav-btn" id="next" aria-label="다음(아래)">▼</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
-  const getVar=(name)=>getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace('px','');
+            <!-- 우측 50% : 팀 리스트 (가운데 정렬) -->
+            <div class="column is-6 team-column">
+                <div class="half-center">
+                    <div class="panel-inner team-stack">
+                        {% for i in range(10) %}
+                        <div class="notification is-success mb-4">
+                            <div class="is-flex is-align-items-center is-justify-content-space-between">
+                                <div class="has-text-weight-semibold">1등 팀명</div>
+                                <div class="is-flex is-align-items-center">
+                                    <div class="avatar-frame mr-2" style="background-image:url('images/member1.png');"></div>
+                                    <div class="avatar-frame mr-2" style="background-image:url('images/member2.png');"></div>
+                                    <div class="avatar-frame" style="background-image:url('images/member3.png');"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  function render(){
-    const gapY=parseFloat(getVar('--gap-y'));
-    const ZC=parseFloat(getVar('--z-center'));
-    const ZN=parseFloat(getVar('--z-near'));
-    const ZF=parseFloat(getVar('--z-far'));
+    <script>
+        const stage = document.getElementById('stage');
+        const items = Array.from(stage.querySelectorAll('.item'));
+        const prev = document.getElementById('prev');
+        const next = document.getElementById('next');
+        let index = 0;
 
-    items.forEach((el,i)=>{
-      const off=i-index, abs=Math.abs(off);
-      const y=off*gapY;
-      const depth=(off===0)?ZC:(abs===1?ZN:ZF);
-      const scale=(off===0)?1:(abs===1?0.96:0.9);
-      el.style.transform=`translate(-50%,-50%) translate3d(0, ${y}px, ${depth}px) scale(${scale})`;
-      el.style.opacity=1;
-      el.style.zIndex=String(100-abs*10);
-      el.classList.toggle('is-center', off===0);
-    });
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+        const getVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace('px', '');
 
-    updateButtons();
-  }
+        function render() {
+            const gapY = parseFloat(getVar('--gap-y'));
+            const ZC = parseFloat(getVar('--z-center'));
+            const ZN = parseFloat(getVar('--z-near'));
+            const ZF = parseFloat(getVar('--z-far'));
 
-  function go(dir){
-    const n=items.length;
-    index=clamp(index+dir,0,n-1);
-    render();
-  }
+            items.forEach((el, i) => {
+                const off = i - index;
+                const abs = Math.abs(off);
+                const y = off * gapY;
+                const depth = (off === 0) ? ZC : (abs === 1 ? ZN : ZF);
+                const scale = (off === 0) ? 1 : (abs === 1 ? 0.96 : 0.9);
+                
+                el.style.transform = `translate(-50%,-50%) translate3d(0, ${y}px, ${depth}px) scale(${scale})`;
+                el.style.opacity = 1;
+                el.style.zIndex = String(100 - abs * 10);
+                el.classList.toggle('is-center', off === 0);
+            });
 
-  function updateButtons(){
-    const n=items.length;
-    prev.disabled=(index===0);
-    next.disabled=(index===n-1);
-  }
+            updateButtons();
+        }
 
-  prev.addEventListener('click',()=>go(-1));
-  next.addEventListener('click',()=>go(1));
+        function go(dir) {
+            const n = items.length;
+            index = clamp(index + dir, 0, n - 1);
+            render();
+        }
 
-  window.addEventListener('keydown',(e)=>{
-    if(e.key==='ArrowUp') go(-1);
-    if(e.key==='ArrowDown') go(1);
-    if(e.key==='ArrowLeft') go(-1);
-    if(e.key==='ArrowRight') go(1);
-  });
+        function updateButtons() {
+            const n = items.length;
+            prev.disabled = (index === 0);
+            next.disabled = (index === n - 1);
+        }
 
-  // 세로 스와이프
-  let startY=null, tracking=false;
-  const onStart=y=>{startY=y;tracking=true};
-  const onMove=y=>{
-    if(!tracking||startY===null) return;
-    const dy=y-startY;
-    if(Math.abs(dy)>48){ if(dy<0) go(1); else go(-1); tracking=false; startY=null; }
-  };
-  const onEnd=()=>{tracking=false; startY=null;};
-  stage.addEventListener('pointerdown',e=>onStart(e.clientY));
-  stage.addEventListener('pointermove',e=>onMove(e.clientY));
-  stage.addEventListener('pointerup',onEnd);
-  stage.addEventListener('pointerleave',onEnd);
-  stage.addEventListener('pointercancel',onEnd);
+        prev.addEventListener('click', () => go(-1));
+        next.addEventListener('click', () => go(1));
 
-  render();
-</script>
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') go(-1);
+            if (e.key === 'ArrowDown') go(1);
+            if (e.key === 'ArrowLeft') go(-1);
+            if (e.key === 'ArrowRight') go(1);
+        });
+
+        // 세로 스와이프
+        let startY = null;
+        let tracking = false;
+        
+        const onStart = y => {
+            startY = y;
+            tracking = true;
+        };
+        
+        const onMove = y => {
+            if (!tracking || startY === null) return;
+            const dy = y - startY;
+            if (Math.abs(dy) > 48) {
+                if (dy < 0) go(1);
+                else go(-1);
+                tracking = false;
+                startY = null;
+            }
+        };
+        
+        const onEnd = () => {
+            tracking = false;
+            startY = null;
+        };
+
+        stage.addEventListener('pointerdown', e => onStart(e.clientY));
+        stage.addEventListener('pointermove', e => onMove(e.clientY));
+        stage.addEventListener('pointerup', onEnd);
+        stage.addEventListener('pointerleave', onEnd);
+        stage.addEventListener('pointercancel', onEnd);
+
+        render();
+    </script>
 </body>
 </html>
