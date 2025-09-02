@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h2>Welcome, {{ user }}!</h2>
+<h2>Welcome, {{ user.nickname }}!</h2>
 <p>You are logged in with JWT.</p>
+{% if user.profile_img %}
+    <div>
+        <img src="{{ url_for('static', filename='profile_imgs/' ~ user.profile_img) }}" 
+             alt="파일이 없어요"
+             width="150" style="border-radius: 50%;">
+    </div>
+{% else %}
+    <p>No profile image uploaded.</p>
+{% endif %}
+<a href="{{ url_for('logout') }}">Logout</a>
 {% endblock %}
