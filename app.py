@@ -139,6 +139,9 @@ def teamsignup():
 
     return render_template("teamsignup.html")
 
+@app.route("/mainpage")
+def mainpage():
+    return render_template("mainpage.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -9,18 +9,18 @@ body {
     margin: 0;
 }
 
-
-
+/* 회원가입 헤더 */
 .sign-up-head {
-    /* border: 2px dotted orange; */
     padding-bottom: 5%;
 }
-.sign-up-head > a {
 
+.sign-up-head > a {
     font-size: 11px;
     margin-right: 70%;
     margin-top: 0%;
 }
+
+/* 메인 컨테이너 */
 .container {
     background: white;
     padding: 30px;
@@ -35,6 +35,7 @@ body {
     margin-bottom: 20px;
 }
 
+/* 폼 박스 */
 .form-box input {
     width: 90%;
     padding: 10px;
@@ -45,9 +46,9 @@ body {
 }
 
 .form-box > div {
-    display: flex;           /* 가로 배치 */
-    align-items: center;     /* 세로 중앙 정렬 */
-    gap: 10px;               /* 텍스트와 select 간 간격 */
+    display: flex; /* 가로 배치 */
+    align-items: center; /* 세로 중앙 정렬 */
+    gap: 10px; /* 텍스트와 select 간 간격 */
     color: #7f7676;
     width: 90%;
     padding: 10px;
@@ -58,17 +59,18 @@ body {
 }
 
 .form-box > div > span {
-    flex-shrink: 0;          /* 텍스트 크기 유지 */
+    flex-shrink: 0; /* 텍스트 크기 유지 */
 }
 
 .form-box > div > select {
-    flex-grow: 1;            /* 남은 공간 채우기 */
+    flex-grow: 1; /* 남은 공간 채우기 */
     padding: 8px;
     font-size: 14px;
     border-radius: 6px;
     border: 1px solid #444;
 }
 
+/* 타이틀 폰트 */
 .rock-3d-regular {
     color: rgba(13, 107, 51, 0.792);
     display: flex;
@@ -82,12 +84,12 @@ body {
     margin: 20px;
 }
 
-
 .rock-3d-regular > div {
     font-size: 32px;
     margin: 10px;
 }
 
+/* 버튼 */
 .btn {
     width: 95%;
     padding: 12px;
@@ -101,7 +103,7 @@ body {
 }
 
 .btn:hover {
-    background: red
+    background: red;
 }
 
 .link-btn {
@@ -120,4 +122,3 @@ body {
     background: red;
     color: white;
 }
-

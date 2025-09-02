@@ -1,1 +1,5 @@
-입학시험 [링크메모장](https://kraftonjungle.notion.site/Chapter-4-4ab9bb5d065048b596d21e8fd5e4b708) 코드
+1 파일명 및 css 파일 정리
+> user_input.css -> user_input_base.html -> login, signup, teamsignup.html
+> mainpage.css -> mainpage.html
+
+2 ?
