@@ -59,6 +59,10 @@ def signup():
         existing_user = users_collection.find_one({"username": username})
         if existing_user:
             return "User already exists!"
+        
+        existing_nickname = users_collection.find_one({"nickname": nickname})
+        if existing_nickname:
+            return "Nickname already exists!"
 
         profile_img = request.files.get("profile_img")
         profile_filename = None
@@ -88,7 +92,7 @@ def login():
         user = users_collection.find_one({"username": username})
         if user and check_password_hash(user["password"], password):
             token = generate_jwt(username)
-            resp = make_response(redirect(url_for("dashboard")))
+            resp = make_response(redirect(url_for("mainpage")))
             resp.set_cookie("token", token, httponly=True)
             return resp
 
@@ -142,6 +146,10 @@ def teamsignup():
 @app.route("/mainpage")
 def mainpage():
     return render_template("mainpage.html")
+
+@app.route("/teamjoin")
+def teamjoin():
+    return render_template("teamjoin.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
