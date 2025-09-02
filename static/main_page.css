@@ -141,6 +141,18 @@ body {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
+/* Blue 카드 스타일 */
+.demo-card.blue {
+    background: rgb(100, 149, 237);
+    border: 1px solid rgb(65, 105, 225);
+}
+
+/* Gray 카드 스타일 */
+.demo-card.gray {
+    background: rgb(169, 169, 169);
+    border: 1px solid rgb(128, 128, 128);
+}
+
 /* 우측 팀 리스트 */
 .team-stack .notification {
     border-radius: 14px;

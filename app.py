@@ -169,7 +169,19 @@ def team_signup():
 
 @app.route("/main_page")
 def main_page():
-    return render_template("main_page.html")
+    # 주차 계산 및 색상 결정 로직
+    start_date = datetime.date(2025, 8, 1) # 배포시 2025, 8, 29 확인
+    current_date = datetime.date.today()
+    days_diff = (current_date - start_date).days
+    current_week = days_diff // 7
+    
+    # 템플릿에 전달할 데이터 생성
+    weeks_data = [{
+        'week': week,
+        'color': 'green' if week < current_week else 
+                'blue' if week == current_week else 'gray'
+    } for week in range(21)]
+    return render_template("main_page.html", current_week = current_week, weeks_data = weeks_data)
 
 @app.route("/team_join", methods=["GET", "POST"])
 def team_join():
