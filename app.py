@@ -168,20 +168,89 @@ def team_signup():
     return render_template("team_signup.html")
 
 @app.route("/main_page")
-def main_page():
+@app.route("/main_page/<int:week>")
+def main_page(week=None):
     # 주차 계산 및 색상 결정 로직
     start_date = datetime.date(2025, 8, 1) # 배포시 2025, 8, 29 확인
     current_date = datetime.date.today()
     days_diff = (current_date - start_date).days
     current_week = days_diff // 7
     
+    # week 파라미터가 있으면 해당 주차, 없으면 현재 주차
+    selected_week = week if week is not None else current_week
+    
     # 템플릿에 전달할 데이터 생성
     weeks_data = [{
-        'week': week,
-        'color': 'green' if week < current_week else 
-                'blue' if week == current_week else 'gray'
-    } for week in range(21)]
-    return render_template("main_page.html", current_week = current_week, weeks_data = weeks_data)
+        'week': week_num,
+        'color': 'green' if week_num < current_week else 
+                'blue' if week_num == current_week else 'gray'
+    } for week_num in range(21)]
+    
+    # 선택된 주차의 팀들을 가져오기 (upvote 기준 내림차순 정렬)
+    selected_week_teams = list(db["teams"].find(
+        {"week": selected_week}
+    ).sort("upvote", -1))
+    
+    # 팀 멤버들의 상세 정보를 가져오기
+    teams_with_members = []
+    for team in selected_week_teams:
+        # 각 멤버의 상세 정보 조회
+        team_members = []
+        for member in team.get("members", []):
+            user_info = users_collection.find_one({"_id": member["userId"]})
+            if user_info:
+                team_members.append({
+                    "username": user_info["username"],
+                    "nickname": user_info["nickname"],
+                    "profile_img": user_info.get("profile_img"),
+                    "role": member["role"]
+                })
+        
+        teams_with_members.append({
+            "teamName": team["teamName"],
+            "description": team.get("description", ""),
+            "week": team["week"],
+            "upvote": team.get("upvote", 0),
+            "members": team_members,
+            "member_count": len(team_members)
+        })
+    
+    return render_template("main_page.html", 
+                         current_week=current_week,
+                         selected_week=selected_week,
+                         weeks_data=weeks_data,
+                         selected_teams=teams_with_members)
+
+@app.route("/teams_partial/<int:week>")
+def teams_partial(week):
+    """특정 주차의 팀 목록 HTML 부분만 반환"""
+    teams = list(db["teams"].find({"week": week}).sort("upvote", -1))
+    
+    teams_with_members = []
+    for team in teams:
+        team_members = []
+        for member in team.get("members", []):
+            user_info = users_collection.find_one({"_id": member["userId"]})
+            if user_info:
+                team_members.append({
+                    "username": user_info["username"],
+                    "nickname": user_info["nickname"],
+                    "profile_img": user_info.get("profile_img"),
+                    "role": member["role"]
+                })
+        
+        teams_with_members.append({
+            "teamName": team["teamName"],
+            "description": team.get("description", ""),
+            "week": team["week"],
+            "upvote": team.get("upvote", 0),
+            "members": team_members,
+            "member_count": len(team_members)
+        })
+    
+    return render_template("teams_partial.html", 
+                         selected_week=week,
+                         selected_teams=teams_with_members)
 
 @app.route("/team_join", methods=["GET", "POST"])
 def team_join():

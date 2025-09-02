@@ -26,7 +26,7 @@
                             <div class="stage" id="stage" aria-live="polite">
                                 <!-- week0 ~ week20 -->
                                 {% for week_data in weeks_data %}
-                                <article class="item card-{{ week_data.week }}">
+                                <article class="item card-{{ week_data.week }}" data-week="{{ week_data.week }}">
                                     <div class="demo-card{% if week_data.color == 'blue' %} blue{% elif week_data.color == 'gray' %} gray{% endif %}">
                                         week{{ week_data.week }}
                                     </div>
@@ -43,19 +43,42 @@
             <!-- 우측 50% : 팀 리스트 (가운데 정렬) -->
             <div class="column is-6 team-column">
                 <div class="half-center">
-                    <div class="panel-inner team-stack">
-                        {% for i in range(10) %}
-                        <div class="notification is-success mb-4">
-                            <div class="is-flex is-align-items-center is-justify-content-space-between">
-                                <div class="has-text-weight-semibold">1등 팀명</div>
-                                <div class="is-flex is-align-items-center">
-                                    <div class="avatar-frame mr-2" style="background-image:url('images/member1.png');"></div>
-                                    <div class="avatar-frame mr-2" style="background-image:url('images/member2.png');"></div>
-                                    <div class="avatar-frame" style="background-image:url('images/member3.png');"></div>
+                    <div class="panel-inner team-stack" id="team-section">
+                        <div class="team-list-header mb-4">
+                            <h3 class="title is-4 has-text-centered">
+                                Week {{ selected_week }} 팀 목록
+                            </h3>
+                        </div>
+                        
+                        <div id="team-list-container">
+                            {% for team in selected_teams %}
+                            <div class="notification is-success mb-4">
+                                <div class="team-info">
+                                    <div class="is-flex is-align-items-center is-justify-content-space-between">
+                                        <div class="team-details">
+                                            <div class="has-text-weight-semibold team-name">{{ team.teamName }}</div>
+                                            <div class="is-size-7 has-text-grey team-meta">
+                                                멤버 {{ team.member_count }}명 · 추천 {{ team.upvote }}개
+                                            </div>
+                                        </div>
+                                        <div class="team-members is-flex is-align-items-center">
+                                            {% for member in team.members[:3] %}
+                                            <div class="avatar-frame mr-2" 
+                                                 title="{{ member.nickname }} ({{ member.role }})"
+                                                 style="background-image: url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}');">
+                                            </div>
+                                            {% endfor %}
+                                            {% if team.member_count > 3 %}
+                                            <div class="avatar-frame more-members">
+                                                +{{ team.member_count - 3 }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -63,7 +86,8 @@
     </div>
 
     <script>
-        window.currentWeek = {{ current_week | default(0) }}; // 잘 작동 함
+        window.currentWeek = {{ current_week | default(0) }};
+        window.selectedWeek = {{ selected_week | default(0) }};
     </script>
     <script src="/static/main_page.js"></script>
 </body>

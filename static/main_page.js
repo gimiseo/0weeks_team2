@@ -4,8 +4,8 @@ function initializeCarousel(currentWeek = 0) {
     const prev = document.getElementById('prev');
     const next = document.getElementById('next');
     
-    // 서버에서 전달받은 현재 주차를 초기 인덱스로 설정
-    let index = Math.max(0, Math.min(20, currentWeek));
+    // 서버에서 전달받은 선택된 주차를 초기 인덱스로 설정
+    let index = Math.max(0, Math.min(20, window.selectedWeek || currentWeek));
 
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
     const getVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace('px', '');
@@ -34,8 +34,16 @@ function initializeCarousel(currentWeek = 0) {
 
     function go(dir) {
         const n = items.length;
-        index = clamp(index + dir, 0, n - 1);
-        render();
+        const newIndex = clamp(index + dir, 0, n - 1);
+        
+        if (newIndex !== index) {
+            index = newIndex;
+            render();
+            
+            // 주차가 변경되면 해당 주차의 팀 목록을 부분적으로 업데이트
+            const selectedWeek = parseInt(items[index].dataset.week);
+            updateTeamSection(selectedWeek);
+        }
     }
 
     function updateButtons() {
@@ -90,9 +98,27 @@ function initializeCarousel(currentWeek = 0) {
     render();
 }
 
+// 팀 섹션만 부분적으로 업데이트하는 함수
+async function updateTeamSection(week) {
+    const teamSection = document.getElementById('team-section');
+    
+    if (!teamSection) return;
+    
+    try {
+        // 서버사이드 렌더링된 HTML 부분을 가져오기
+        const response = await fetch(`/teams_partial/${week}`);
+        const html = await response.text();
+        
+        // 팀 섹션 전체를 새로운 HTML로 교체
+        teamSection.innerHTML = html;
+        
+    } catch (error) {
+        console.error('팀 목록 업데이트 실패:', error);
+    }
+}
+
 // DOM이 로드되면 초기화 함수 준비
 document.addEventListener('DOMContentLoaded', () => {
-    // HTML에서 전달받은 currentWeek 값으로 초기화
     if (typeof window.currentWeek !== 'undefined') {
         initializeCarousel(window.currentWeek);
     } else {
