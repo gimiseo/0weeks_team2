@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>글 수정 – WeeklyWeLearned</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <style>
+    body { background:#f6fbf9; }
+    .editor-container {
+      height: 400px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+    }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <h1 class="title is-3">글 수정</h1>
+      <form method="POST" action="/update_post">
+        <input type="hidden" name="old_title" value="{{ post.title }}">
+        <div class="field">
+          <label class="label">제목</label>
+          <div class="control">
+            <input class="input" type="text" name="title" value="{{ post.title }}" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">내용</label>
+          <div id="editor" class="editor-container">{{ post.content | safe }}</div>
+          <textarea name="content" id="content" style="display:none;"></textarea>
+        </div>
+        <div class="control">
+          <button class="button is-success" type="submit">수정하기</button>
+        </div>
+      </form>
+    </div>
+  </section>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script>
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, false] }],
+          ['bold', 'italic', 'underline'],
+          ['link', 'image'],
+          [{ list: 'ordered' }, { list: 'bullet' }]
+        ]
+      }
+    });
+
+    // 에디터 내용 폼에 저장
+    document.querySelector('form').addEventListener('submit', function() {
+      document.querySelector('#content').value = quill.root.innerHTML;
+    });
+  </script>
+</body>
+</html>

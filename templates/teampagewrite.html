@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>팀 페이지 – WeeklyWeLearned</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+  <style>
+    body { background:#f6fbf9; }
+    .wwl-label{ font-size:30px; font-weight:700; color:#00c32e; }
+    .avatar-frame{ 
+      width:72px; height:72px; border-radius:50%; 
+      background-size:cover; background-position:center; 
+      border:3px solid #fff; 
+      box-shadow:0 2px 8px rgba(0,0,0,.2); 
+    }
+    .note-editor.note-frame {
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+    }
+  </style>
+</head>
+<body>
+  <!-- 상단 고정 네비게이션 -->
+  <nav class="navbar is-white has-shadow">
+    <div class="navbar-brand">
+      <a class="navbar-item wwl-label">WeeklyWeLearned</a>
+    </div>
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <a href="#mypage" class="button is-primary">마이페이지</a>
+        <span class="ml-3 has-text-weight-semibold" style="cursor:pointer;">로그아웃</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 메인 컨텐츠 -->
+  <section class="section">
+    <div class="container">
+      
+      <!-- 팀 헤더 -->
+      <div class="box">
+        <h1 class="title is-3">1등 팀명</h1>
+        <div class="is-flex is-align-items-center">
+          <div class="avatar-frame mr-3" style="background-image:url('images/member1.png');"></div>
+          <div class="avatar-frame mr-3" style="background-image:url('images/member2.png');"></div>
+          <div class="avatar-frame mr-3" style="background-image:url('images/member3.png');"></div>
+        </div>
+      </div>
+
+      <!-- 팀 정보 -->
+      <div class="box mb-5">
+        <div class="field">
+            <label class="label">첨부파일 업로드</label>
+        <div class="file has-name is-boxed">
+            <label class="file-label">
+                <input class="file-input" type="file" name="team_file" id="teamFile">
+                <span class="file-cta">
+                    <span class="file-icon">
+                        📎
+                    </span>
+                    <span class="file-label">파일 선택</span>
+                </span>
+                <span class="file-name" id="fileName">선택된 파일 없음</span>
+            </label>
+        </div>
+  </div>
+  
+  <p class="mt-3"><strong>깃허브 주소:</strong> <a href="#">https://github.com/team/repo</a></p>
+</div>
+
+      <!-- 글쓰기 에디터 -->
+      <div class="box">
+        <h2 class="title is-4 mb-3">팀 블로그 글쓰기</h2>
+        <form method="POST" action="/teampagewrite" enctype="multipart/form-data">
+          <div class="field">
+            <label class="label">작성자</label>
+            <div class="control">
+              <input class="input" type="text" name="author" placeholder="작성자 이름을 입력하세요" required>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">제목</label>
+            <div class="control">
+              <input class="input" type="text" name="title" placeholder="제목을 입력하세요" required>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">내용</label>
+            <textarea id="editor" name="content"></textarea>
+          </div>
+          <div class="control">
+            <button class="button is-success mt-3" type="submit">저장하기</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#editor').summernote({
+        height: 400,
+        toolbar: [
+          ['style', ['bold', 'italic', 'underline', 'clear']],
+          ['font', ['strikethrough', 'superscript', 'subscript']],
+          ['fontsize', ['fontsize']],
+          ['color', ['color']],
+          ['para', ['ul', 'ol', 'paragraph']],
+          ['height', ['height']],
+          ['insert', ['link', 'picture', 'video']],
+          ['view', ['fullscreen', 'codeview', 'help']]
+        ],
+        callbacks: {
+          onImageUpload: function(files) {
+            const formData = new FormData();
+            formData.append('image', files[0]);
+
+            // 서버에 이미지 업로드 요청
+            $.ajax({
+              url: '/upload_image',
+              method: 'POST',
+              data: formData,
+              contentType: false,
+              processData: false,
+              success: function(data) {
+                // 업로드된 이미지 URL을 에디터에 삽입
+                $('#editor').summernote('insertImage', data.url);
+              },
+              error: function() {
+                alert('이미지 업로드에 실패했습니다.');
+              }
+            });
+          }
+        }
+      });
+    });
+
+    const fileInput = document.querySelector('#teamFile');
+    const fileName = document.querySelector('#fileName');
+    fileInput.addEventListener('change', () => {
+      fileName.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : '선택된 파일 없음';
+    });
+  </script>
+</body>
+</html>
