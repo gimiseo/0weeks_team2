@@ -153,13 +153,6 @@ body {
     border: 1px solid rgb(128, 128, 128);
 }
 
-/* 우측 팀 리스트 */
-.team-stack .notification {
-    border-radius: 14px;
-    min-width: 620px; /* 가로 길이 늘리기 */
-    padding: 16px 24px; /* 안쪽 여백 */
-}
-
 /* 우측 50% 컬럼 안에만 스크롤 적용 */
 .column.is-6.team-column {
     max-height: var(--stage-h); /* 좌측 캐러셀 높이와 동일 */
@@ -167,12 +160,151 @@ body {
     padding-right: 8px; /* 스크롤바 공간 보정 */
 }
 
+/* 팀 리스트 헤더 */
+.team-list-header {
+    text-align: center;
+    border-bottom: 2px solid #e8f5e8;
+    padding-bottom: 12px;
+}
+
+/* 팀 정보 카드 */
+.team-stack .notification {
+    border-radius: 14px;
+    min-width: 620px; /* 가로 길이 늘리기 */
+    padding: 16px 24px; /* 안쪽 여백 */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.team-stack .notification:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* 팀 세부 정보 */
+.team-details .team-name {
+    font-size: 1.1rem;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.team-details .team-meta {
+    color: #718096;
+    font-size: 0.85rem;
+}
+
+/* 아바타 프레임 */
 .avatar-frame {
-    width: 88px;
-    height: 88px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background-size: cover;
     background-position: center;
-    border: 3px solid #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+    /* 기본 배경색과 패턴 */
+    background-color: #e2e8f0;
+    background-image: radial-gradient(circle at center, #cbd5e0 30%, transparent 30%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #718096;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* 프로필 이미지가 있는 경우에만 배경 패턴 제거 */
+.avatar-frame[style*="background-image"]:not([style*="default-avatar"]) {
+    background-image: none;
+}
+
+.avatar-frame.more-members {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-image: none; /* 패턴 제거 */
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    /* 더 명확한 구분을 위한 스타일 */
+    border: 2px dashed #fff;
+    opacity: 0.9;
+    transform: scale(0.85);
+    margin-left: -4px; /* 겹치도록 위치 조정 */
+}
+
+.avatar-frame.more-members:hover {
+    transform: scale(0.9);
+    opacity: 1;
+}
+
+/* 팀 멤버들 컨테이너 */
+.team-members {
+    gap: 8px;
+}
+
+/* 팀 액션 버튼들 */
+.team-actions {
+    padding-top: 16px;
+    border-top: 1px solid #e8f5e8;
+}
+
+.team-actions .buttons {
+    gap: 12px;
+}
+
+.team-actions .button {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* 빈 상태 스타일 */
+.notification.is-light {
+    background-color: #f7fafc;
+    border: 2px dashed #cbd5e0;
+}
+
+/* 로딩 상태 */
+.is-loading {
+    display: inline-block;
+    position: relative;
+    color: #718096;
+}
+
+.is-loading::after {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+    border: 2px solid #cbd5e0;
+    border-top-color: #4299e1;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    :root {
+        --panel-w: 90%;
+        --stage-h: 600px;
+    }
+    
+    .team-stack .notification {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .avatar-frame {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .team-details .team-name {
+        font-size: 1rem;
+    }
 }
