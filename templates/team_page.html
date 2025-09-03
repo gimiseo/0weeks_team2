@@ -89,6 +89,14 @@
     .avatar-frame:hover {
       transform: scale(1.05);
     }
+
+    .button.is-danger.is-outlined:hover {
+      background-color: #ff3860;
+      border-color: #ff3860;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(255, 56, 96, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -175,22 +183,41 @@
         {% endfor %}
       </div>
       
-      <!-- 액션 버튼들 -->
-      <div class="mb-4">
-        {% if is_member %}
-        <a href="/team_post_write/{{ team.id }}" class="button is-success">
-          <span class="icon is-small">
-            <i class="fas fa-plus"></i>
-          </span>
-          <span>글 작성</span>
-        </a>
-        {% else %}
-        <a href="/team_join/{{ team.id }}" class="button is-info">
-          <span class="icon is-small">
-            <i class="fas fa-user-plus"></i>
-          </span>
-          <span>팀 가입</span>
-        </a>
+      <!-- 액션 버튼들 부분 (team_page.html) -->
+      <div class="mb-4 is-flex is-justify-content-space-between is-align-items-center team-actions">
+        <div>
+          {% if is_member %}
+          <a href="/team_post_write/{{ team.id }}" class="button is-success">
+            <span class="icon is-small">
+              <i class="fas fa-plus"></i>
+            </span>
+            <span>글 작성</span>
+          </a>
+          {% else %}
+          <a href="/team_join/{{ team.id }}" class="button is-info">
+            <span class="icon is-small">
+              <i class="fas fa-user-plus"></i>
+            </span>
+            <span>팀 가입</span>
+          </a>
+          {% endif %}
+        </div>
+        
+        <!-- 팀 마스터만 볼 수 있는 팀 삭제 버튼 -->
+        {% if is_master %}
+        <div>
+          <form method="POST" action="/delete_team" style="display: inline;">
+            <input type="hidden" name="team_id" value="{{ team.id }}">
+            <button type="submit" class="button is-danger is-outlined" 
+                    style="transition: all 0.2s ease;"
+                    onclick="return confirm('⚠️ 경고: 팀을 삭제하면 모든 게시글과 댓글이 영구적으로 삭제됩니다.\n\n정말로 「{{ team.teamName }}」 팀을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')">
+              <span class="icon is-small">
+                <i class="fas fa-trash-alt"></i>
+              </span>
+              <span>팀 삭제</span>
+            </button>
+          </form>
+        </div>
         {% endif %}
       </div>
       

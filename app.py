@@ -293,13 +293,19 @@ def team_signup():
         week = int(request.form["week"])      
         team_password = request.form["team_password"]
 
-        # 같은 주차에 같은 이름의 팀이 있는지 확인
-        existing_team = db["teams"].find_one({
+        # 1. 같은 주차에 같은 이름의 팀이 있는지 확인
+        existing_team_by_name = db["teams"].find_one({
             "teamName": team_name,
             "week": week
         })
-        if existing_team:
+        if existing_team_by_name:
             return f"{week}주차에 '{team_name}' 팀 이름이 이미 존재합니다!"
+
+        # 2. 같은 주차에 같은 비밀번호를 가진 팀이 있는지 확인
+        teams_in_week = list(db["teams"].find({"week": week}))
+        for team in teams_in_week:
+            if check_password_hash(team["roomPasswordHash"], team_password):
+                return f"{week}주차에 동일한 비밀번호를 사용하는 팀이 이미 존재합니다!"
 
         # 비밀번호 해시화
         room_password_hash = generate_password_hash(team_password)
@@ -331,7 +337,7 @@ def team_signup():
         # 팀을 데이터베이스에 삽입
         db["teams"].insert_one(new_team)
 
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("main_page"))
 
     selected_week = request.args.get('week', type=int)
 
@@ -1222,11 +1228,15 @@ def delete_team():
     if not username:
         return redirect(url_for("login"))
     
-    team_name = request.form.get("team_name")
-    week = request.form.get("week", type=int)
+    team_id = request.form.get("team_id")
     
-    if not team_name or week is None:
+    if not team_id:
         return '<script>alert("팀 정보가 올바르지 않습니다."); history.back();</script>'
+    
+    try:
+        team_object_id = ObjectId(team_id)
+    except:
+        return '<script>alert("잘못된 팀 ID입니다."); history.back();</script>'
     
     # 현재 사용자 정보 조회
     current_user = users_collection.find_one({"username": username})
@@ -1234,10 +1244,7 @@ def delete_team():
         return redirect(url_for("login"))
     
     # 팀 정보 조회
-    team = db["teams"].find_one({
-        "teamName": team_name,
-        "week": week
-    })
+    team = db["teams"].find_one({"_id": team_object_id})
     
     if not team:
         return '<script>alert("해당 팀을 찾을 수 없습니다."); history.back();</script>'
@@ -1251,21 +1258,77 @@ def delete_team():
     if not is_master:
         return '<script>alert("팀장만 팀을 삭제할 수 있습니다."); history.back();</script>'
     
-    # 팀의 모든 이미지 삭제
-    deleted_images = delete_team_images(team)
-    if deleted_images:
-        print(f"팀 '{team_name}'에서 {len(deleted_images)}개의 이미지를 삭제했습니다.")
+    try:
+        # 팀의 모든 이미지 삭제
+        deleted_images = delete_team_images(team)
+        if deleted_images:
+            print(f"팀 '{team['teamName']}'에서 {len(deleted_images)}개의 이미지를 삭제했습니다.")
+        
+        # 팀 삭제
+        result = db["teams"].delete_one({"_id": team_object_id})
+        
+        if result.deleted_count > 0:
+            # 성공 시 메인 페이지로 리다이렉트
+            return '<script>alert("팀이 성공적으로 삭제되었습니다."); window.location.href="/main_page";</script>'
+        else:
+            return '<script>alert("팀 삭제에 실패했습니다."); history.back();</script>'
+            
+    except Exception as e:
+        print(f"팀 삭제 중 오류 발생: {e}")
+        return '<script>alert("팀 삭제 중 오류가 발생했습니다."); history.back();</script>'@app.route("/delete_team", methods=["POST"])
+def delete_team():
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
     
-    # 팀 삭제
-    result = db["teams"].delete_one({
-        "teamName": team_name,
-        "week": week
-    })
+    team_id = request.form.get("team_id")
     
-    if result.deleted_count > 0:
-        return redirect(url_for("main_page"))
-    else:
-        return '<script>alert("팀 삭제에 실패했습니다."); history.back();</script>'
+    if not team_id:
+        return '<script>alert("팀 정보가 올바르지 않습니다."); history.back();</script>'
+    
+    try:
+        team_object_id = ObjectId(team_id)
+    except:
+        return '<script>alert("잘못된 팀 ID입니다."); history.back();</script>'
+    
+    # 현재 사용자 정보 조회
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return redirect(url_for("login"))
+    
+    # 팀 정보 조회
+    team = db["teams"].find_one({"_id": team_object_id})
+    
+    if not team:
+        return '<script>alert("해당 팀을 찾을 수 없습니다."); history.back();</script>'
+    
+    # 현재 사용자가 팀장인지 확인
+    is_master = any(
+        member["userId"] == current_user["_id"] and member["role"] == "master"
+        for member in team.get("members", [])
+    )
+    
+    if not is_master:
+        return '<script>alert("팀장만 팀을 삭제할 수 있습니다."); history.back();</script>'
+    
+    try:
+        # 팀의 모든 이미지 삭제
+        deleted_images = delete_team_images(team)
+        if deleted_images:
+            print(f"팀 '{team['teamName']}'에서 {len(deleted_images)}개의 이미지를 삭제했습니다.")
+        
+        # 팀 삭제
+        result = db["teams"].delete_one({"_id": team_object_id})
+        
+        if result.deleted_count > 0:
+            # 성공 시 메인 페이지로 리다이렉트
+            return '<script>alert("팀이 성공적으로 삭제되었습니다."); window.location.href="/main_page";</script>'
+        else:
+            return '<script>alert("팀 삭제에 실패했습니다."); history.back();</script>'
+            
+    except Exception as e:
+        print(f"팀 삭제 중 오류 발생: {e}")
+        return '<script>alert("팀 삭제 중 오류가 발생했습니다."); history.back();</script>'
     
 @app.route("/user/<username>")
 def user_profile(username):
