@@ -598,6 +598,10 @@ def team_page(team_id):
                 "role": member["role"]
             })
     
+    # 역할별로 정렬 (팀장 -> 관리자 -> 멤버 순)
+    role_order = {"master": 0, "admin": 1, "member": 2}
+    team_members.sort(key=lambda x: role_order.get(x["role"], 999))
+    
     # 현재 사용자가 팀 멤버인지 확인
     current_user = users_collection.find_one({"username": username})
     is_member = any(member["userId"] == current_user["_id"] for member in team.get("members", []))
