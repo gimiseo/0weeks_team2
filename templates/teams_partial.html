@@ -1,35 +1,27 @@
-<div class="team-list-header mb-4">
-    <h3 class="title is-4 has-text-centered">
-        Week {{ selected_week }} 팀 목록
-    </h3>
-</div>
-
-<div id="team-list-container">
-    {% for team in selected_teams %}
-    <div class="notification is-success mb-4">
-        <div class="team-info">
-            <div class="is-flex is-align-items-center is-justify-content-space-between">
-                <div class="team-details">
-                    <div class="has-text-weight-semibold team-name">{{ team.teamName }}</div>
-                    <div class="is-size-7 has-text-grey team-meta">
-                        멤버 {{ team.member_count }}명 · 추천 {{ team.upvote }}개
-                    </div>
+{% for team in selected_teams %}
+<div class="notification is-success mb-4 team-card" style="cursor: pointer;" onclick="window.location.href='/team_page/{{ team.id }}'">
+    <div class="team-info">
+        <div class="is-flex is-align-items-center is-justify-content-space-between">
+            <div class="team-details">
+                <div class="has-text-weight-semibold team-name">{{ team.teamName }}</div>
+                <div class="is-size-7 has-text-grey team-meta">
+                    멤버 {{ team.member_count }}명 · 추천 {{ team.upvote }}개
                 </div>
-                <div class="team-members is-flex is-align-items-center">
-                    {% for member in team.members[:3] %}
-                    <div class="avatar-frame mr-2" 
-                         title="{{ member.nickname }} ({{ member.role }})"
-                         style="background-image: url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}');">
-                    </div>
-                    {% endfor %}
-                    {% if team.member_count > 3 %}
-                    <div class="avatar-frame more-members">
-                        +{{ team.member_count - 3 }}
-                    </div>
-                    {% endif %}
+            </div>
+            <div class="team-members is-flex is-align-items-center">
+                {% for member in team.members[:3] %}
+                <div class="avatar-frame mr-2" 
+                     title="{{ member.nickname }} ({{ member.role }})"
+                     style="background-image: url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}');">
                 </div>
+                {% endfor %}
+                {% if team.member_count > 3 %}
+                <div class="avatar-frame more-members">
+                    +{{ team.member_count - 3 }}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
-    {% endfor %}
 </div>
+{% endfor %}

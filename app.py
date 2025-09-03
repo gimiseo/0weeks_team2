@@ -207,6 +207,7 @@ def main_page(week=None):
                 })
         
         teams_with_members.append({
+            "id": str(team["_id"]),  # 팀 ID 추가
             "teamName": team["teamName"],
             "description": team.get("description", ""),
             "week": team["week"],
@@ -240,6 +241,7 @@ def teams_partial(week):
                 })
         
         teams_with_members.append({
+            "id": str(team["_id"]),  # 팀 ID 추가
             "teamName": team["teamName"],
             "description": team.get("description", ""),
             "week": team["week"],
@@ -309,9 +311,62 @@ def team_join():
 
     return render_template("team_join.html")
 
-@app.route("/team_page", methods=["GET", "POST"])
-def team_page():
-    return render_template("team_page.html")
+@app.route("/team_page")
+def team_page_redirect():
+    return redirect(url_for("main_page"))
+
+@app.route("/team_page/<team_id>")
+def team_page(team_id):
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
+    
+    # team_id가 비어있거나 None인 경우 main_page로 리다이렉트
+    if not team_id or team_id.strip() == "":
+        return redirect(url_for("main_page"))
+    
+    try:
+        from bson import ObjectId
+        team_object_id = ObjectId(team_id)
+    except:
+        # 잘못된 팀 ID인 경우 main_page로 리다이렉트
+        return redirect(url_for("main_page"))
+    
+    # 팀 정보 조회
+    team = db["teams"].find_one({"_id": team_object_id})
+    if not team:
+        # 팀을 찾을 수 없는 경우 main_page로 리다이렉트
+        return redirect(url_for("main_page"))
+    
+    # 팀 멤버들의 상세 정보 조회
+    team_members = []
+    for member in team.get("members", []):
+        user_info = users_collection.find_one({"_id": member["userId"]})
+        if user_info:
+            team_members.append({
+                "username": user_info["username"],
+                "nickname": user_info["nickname"],
+                "profile_img": user_info.get("profile_img"),
+                "role": member["role"]
+            })
+    
+    # 현재 사용자가 팀 멤버인지 확인
+    current_user = users_collection.find_one({"username": username})
+    is_member = any(member["userId"] == current_user["_id"] for member in team.get("members", []))
+    
+    # 팀 데이터 구성
+    team_data = {
+        "id": str(team["_id"]),
+        "teamName": team["teamName"],
+        "description": team.get("description", ""),
+        "week": team["week"],
+        "upvote": team.get("upvote", 0),
+        "members": team_members,
+        "member_count": len(team_members),
+        "posts": team.get("posts", [])
+    }
+    
+    return render_template("team_page.html", team=team_data, is_member=is_member)
 
 if __name__ == "__main__":
     app.run(debug=True)

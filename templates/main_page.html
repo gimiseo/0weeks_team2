@@ -52,7 +52,7 @@
                         
                         <div id="team-list-container">
                             {% for team in selected_teams %}
-                            <div class="notification is-success mb-4">
+                            <div class="notification is-success mb-4 team-card" style="cursor: pointer;" onclick="window.location.href='/team_page/{{ team.id }}'">
                                 <div class="team-info">
                                     <div class="is-flex is-align-items-center is-justify-content-space-between">
                                         <div class="team-details">
