@@ -10,11 +10,14 @@
 <body>
     <div class="wwl-label" onclick="handleWWLClick()">WeeklyWeLearned</div>
     <div class="top-menu">
-        <a href="#mypage" class="button is-primary">마이페이지</a>
+        <div class="user-profile-btn" onclick="window.location.href='/my_page'" style="display: flex; align-items: center; cursor: pointer; padding: 8px 12px; background: #e8f5e8; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-right: 10px;">
+            <div class="avatar-frame" style="width: 32px; height: 32px; background-image: url('{{ '/static/profile_imgs/' + current_user.profile_img if current_user.profile_img else '/static/images/default-avatar.jpg' }}'); margin-right: 8px;"></div>
+            <span style="font-size: 14px; font-weight: 500; color: #363636;">{{ current_user.nickname }}</span>
+        </div>
         <span class="logout-text" onclick="window.location.href='/logout'">로그아웃</span>
     </div>
 
-    <div class="main-wrap container is-fluid">
+    <div class="main-wrap container is-fluid" style="margin-top: 80px;">
         <!-- columns 를 정확히 반씩(is-6/is-6) + is-vcentered 로 세로 중앙 -->
         <div class="columns is-variable is-6 is-vcentered split-row">
             

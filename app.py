@@ -170,6 +170,13 @@ def team_signup():
 @app.route("/main_page")
 @app.route("/main_page/<int:week>")
 def main_page(week=None):
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
+    
+    # 현재 로그인한 사용자 정보 조회
+    current_user = users_collection.find_one({"username": username})
+    
     # 주차 계산 및 색상 결정 로직
     start_date = datetime.date(2025, 8, 1) # 배포시 2025, 8, 29 확인
     current_date = datetime.date.today()
@@ -224,7 +231,8 @@ def main_page(week=None):
                          current_week=current_week,
                          selected_week=selected_week,
                          weeks_data=weeks_data,
-                         selected_teams=teams_with_members)
+                         selected_teams=teams_with_members,
+                         current_user=current_user)
 
 @app.route("/teams_partial/<int:week>")
 def teams_partial(week):
@@ -325,6 +333,9 @@ def team_page(team_id):
     if not username:
         return redirect(url_for("login"))
     
+    # 현재 로그인한 사용자 정보 조회
+    current_user_data = users_collection.find_one({"username": username})
+    
     # team_id가 비어있거나 None인 경우 main_page로 리다이렉트
     if not team_id or team_id.strip() == "":
         return redirect(url_for("main_page"))
@@ -370,7 +381,19 @@ def team_page(team_id):
         "posts": team.get("posts", [])
     }
     
-    return render_template("team_page.html", team=team_data, is_member=is_member)
+    return render_template("team_page.html",
+                           team=team_data,
+                           is_member=is_member,
+                           current_user=current_user_data)
+
+@app.route("/my_page")
+def my_page():
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
+    
+    # 현재는 메인페이지로 리다이렉트, 추후 my_page.html 구현시 수정
+    return redirect(url_for("main_page"))
 
 if __name__ == "__main__":
     app.run(debug=True)
