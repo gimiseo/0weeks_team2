@@ -1367,7 +1367,7 @@ def update_profile_image():
                 {"$set": {"profile_img": new_filename}}
             )
             
-            if result.modified_count > 0:
+            if result.matched_count > 0:
                 print(f"데이터베이스 업데이트 성공: {username} -> {new_filename}")
                 return jsonify({
                     "success": True,
