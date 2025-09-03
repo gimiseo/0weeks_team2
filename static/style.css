@@ -1,18 +1,29 @@
-body {
+ body {
     font-family: "Noto Sans KR", sans-serif;
     background-color: #f8fff8;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; 
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100vh;  
     margin: 0;
-}
+} 
+
+
+/* body {
+    font-family: "Noto Sans KR", sans-serif;
+    background-color: #f8fff8;  /* 연한 초록색 배경 
+    margin: 0;
+    min-height: 100vh;   /*화면 전체 높이 
+}   
+*/
+
+
+
 
 
 
 .sign-up-head {
-    /* border: 2px dotted orange; */
     padding-bottom: 5%;
 }
 .sign-up-head > a {
@@ -22,79 +33,21 @@ body {
     margin-top: 0%;
 }
 .container {
+    display: inline-block;
     background: white;
     padding: 30px;
     border: 3px solid #0e900ecf;
     border-radius: 12px;
     width: 320px;
     text-align: center;
-}
+} 
+
 
 .title {
     font-size: 24px;
     margin-bottom: 20px;
 }
 
-/* test */
-.form-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-}
-
-.form-box select,input {
-    width: 90%;
-    padding: 10px;
-    margin: 8px 0;
-    border: 2px solid #444;
-    border-radius: 6px;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-.form-box > div {
-    display: flex;           
-    align-items: first baseline;     
-    gap: 10px;               
-    width: 90%;
-    padding: 10px;
-    margin: 8px 0;
-    border: 2px solid #444;
-    border-radius: 6px;
-    font-size: 14px;
-    box-sizing: border-box;
-    color: #7f7676;
-}
-
-.form-box > div > span {
-    /* flex-shrink: 0; */
-}
-
-.form-box > div > select {
-    flex-grow: 1;
-    padding: 8px;
-    font-size: 14px;
-    border-radius: 6px;
-    border: 1px solid #444;
-}
-
-.btn {
-    width: 90%;
-    padding: 10px;
-    margin-top: 12px;
-    font-size: 16px;
-    border-radius: 6px;
-    border: none;
-    background-color: #444;
-    color: white;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.btn:hover {
-    background-color: #666;
-}
 
 /* test */
 .form-box input {
@@ -113,7 +66,7 @@ body {
     color: #7f7676;
     width: 90%;
     padding: 10px;
-    margin: 8px 0;
+    margin: auto;
     border: 2px solid #444;
     border-radius: 6px;
     font-size: 14px;
@@ -163,11 +116,12 @@ body {
 }
 
 .btn:hover {
-    background: red
+    background: rgb(253, 56, 56);
+    color: white;
 }
 
 .link-btn {
-    display: inline-block;
+    display: inline-flex;
     margin-top: 12px;
     padding: 8px 14px;
     background: #000;
@@ -179,7 +133,218 @@ body {
 }
 
 .link-btn:hover {
-    background: red;
+    background: rgb(253, 56, 56);
     color: white;
 }
 
+/* mypage */
+ .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 500px;
+} 
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.profile-pic {
+    position: relative;
+    border: 2px solid #0e900ecf;
+}
+
+.profile-pic img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.profile-actions {
+    width: 200px;
+    display: none;
+    position: absolute;
+    top: 90px;
+    left: 0;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.profile-actions > form {
+    width: 100%;
+    justify-items: center;
+    flex-direction: column;
+}
+
+.profile-actions > form > button{
+    width: 50%;
+    justify-items: center;
+}
+.profile-actions > form > a {
+    display: inline-block;
+    width: auto;
+    justify-items: center;
+    align-items: center;
+
+}
+
+
+.profile-pic:hover .profile-actions {
+    display: flex;
+}
+
+
+
+.profile-name, .profile-actions{
+    display: flex;
+    padding: 6px 10px;
+    font-size: 12px;
+    margin-bottom: 30px;
+    border-radius: 6px;
+    border: none;
+    background-color: #c1dabd;
+    color: white;
+    cursor: pointer;
+}
+.profile-buttons {
+    background: none;
+    display: flex;
+    position: absolute;
+    left:63%;
+    top:12%
+}
+
+.profile-buttons  a {
+    margin-right: 2px;
+    margin-top: 0px;
+    border: 2px solid #0e900ecf;
+}
+
+.profile-name > form{
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.profile-name input {
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #444;
+}
+
+.profile-name button {
+    margin-bottom: 10px;
+}
+
+.profile-btn {
+    margin-left: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: none;
+    background-color: #fff;
+    color: white;
+    cursor: pointer;
+}
+
+
+.team-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.week-team {
+    display: flex;
+    gap: 20px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    align-items: center;
+}
+
+.week {
+    font-weight: bold;
+    width: 80px;
+}
+
+.team-name {
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* week 태그 바 */
+.week-team-bar {
+    background-color: #f8fff8;
+    border: 2px solid #0e900ecf;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tag-container {
+    width: 410px;
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* 좌측: 프로필, 우측: 팀명 */
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-sizing: border-box;
+}
+
+.profile-pics {
+    display: flex;
+    gap: 8px;
+}
+
+.profile-circle {
+    width: 50px;
+    height: 50px;
+    background-color: #c1dabd; /* 기본 배경색 */
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    border: 2px solid #0e900ecf;
+}
+/* week 태그 바  end*/
+
+/* pagination controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.pagination-controls button {
+    padding: 8px 14px;
+    border: 2px solid #0e900ecf;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* pagination controls end */
+
+/* mypage end */

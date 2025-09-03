@@ -8,8 +8,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rock+3D&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@100..900&family=Rock+3D&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
 </head>
 <body>
     {% block content %}{% endblock %}
+
+    {# 페이지별 스크립트를 여기에 넣을 수 있도록 블록 생성 #}
+    {% block scripts %}{% endblock %}
 </body>
 </html>

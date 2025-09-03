@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 {% block title %}로그인{% endblock %}
 {% block content %}
-<h1 class="rock-3d-regular ">WWL <div  class="rock-3d-regular">(Week We Learned)</div></h1>
+<h1 class="rock-3d-regular ">WWL <div  class="rock-3d-regular">(Weekly We Learned)</div></h1>
 <div class="container">
-    <h2>로그인</h2>
-    <form method="post" class="form-box">
-        <input type="text" name="username" placeholder="아이디" required><br>
-        <input type="password" name="password" placeholder="비밀번호" required><br>
-        <button type="submit" class="btn">로그인</button>
-    </form>
-    <a href="{{ url_for('signup') }}" class="link-btn">회원가입</a>
-    <a href="{{ url_for('teamjoin') }}" class="link-btn">팀 가입</a>
-    <a href="{{ url_for('teamsignup') }}" class="link-btn">팀 생성</a>
-</div>
+        <h2>로그인</h2>
+        <form method="post" class="form-box">
+            <input type="text" name="username" placeholder="아이디" required><br>
+            <input type="password" name="password" placeholder="비밀번호" required><br>
+            <button type="submit" class="btn">로그인</button>
+        </form>
+        <a href="{{ url_for('signup') }}" class="link-btn">회원가입</a>
+        <a href="{{ url_for('teamjoin') }}" class="link-btn">팀 가입</a>
+        <a href="{{ url_for('teamsignup') }}" class="link-btn">팀 생성</a>
+        <a href="{{ url_for('mypage') }}" class="link-btn">마이페이지</a>
+    </div>
 {% endblock %}

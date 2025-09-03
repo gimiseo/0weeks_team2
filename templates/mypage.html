@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}마이페이지{% endblock %}
+{% block content %}
+<div class="container">
+
+  <!-- 상단: 프로필 + 이름 + 버튼 -->
+  <div class="profile-header">
+    <div class="profile-pic" style="position: relative;">
+      <img id="profileImg"
+        src="{{ url_for('static', filename='profile_imgs/' + (user['profile_img'] or 'default_profile.png')) }}?v={{ user['profile_img'] }}"
+        alt="프로필사진" style="width:120px;height:120px;border-radius:50%;cursor:pointer;">
+      <div id="profileActions" class="profile-actions">
+        <form method="post" enctype="multipart/form-data">
+          <input type="file" name="profile_img" accept="image/*">
+          <button type="submit" class="btn">업로드</button>
+          <a href="{{ url_for('delete_profile') }}" class="btn">삭제</a>
+        </form>
+      </div>
+    </div>
+
+    <div class="profile-name">
+      <form method="post">
+        <input type="text" name="nickname" value="{{ user['nickname'] or user['username'] }}">
+        <button type="submit" class="btn">저장</button>
+      </form>
+    </div>
+
+    <div class="profile-buttons">
+      <a href="{{ url_for('teamsignup') }}" class="btn">팀 생성</a>
+      <a href="{{ url_for('teamjoin') }}" class="btn">팀 가입</a>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- 하단: 팀 리스트 -->
+  <div class="team-list" id="teamList">
+    {% for team in teams %}
+    <div class="week-team-bar">
+      <div class="week-team">
+        <span class="week">{{ team.week }} week</span>
+      </div>
+      <div class="tag-container">
+        <div class="profile-pics">
+          <div class="profile-circle"></div>
+          <div class="profile-circle"></div>
+          <div class="profile-circle"></div>
+        </div>
+        <span class="team-name">{{ team.team_name }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- 페이지네이션 버튼 -->
+  <div class="pagination-controls">
+    <button id="prevBtn" disabled>⬆ 이전</button>
+    <button id="nextBtn">⬇ 다음</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  /* 기본적으로 리스트 항목 숨김 */
+  #teamList > .week-team-bar {
+    display: none;
+  }
+  /* 부드러운 전환 효과 */
+  .team-list {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .team-list.fade-out {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .team-list.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const itemsPerPage = 5;
+    let currentPage = 0;
+
+    const teamList = document.getElementById("teamList");
+    if (!teamList) return;
+
+    const teams = Array.from(teamList.children);
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    function updateVisibleItems() {
+      teams.forEach((team, index) => {
+        team.style.display =
+          index >= currentPage * itemsPerPage && index < (currentPage + 1) * itemsPerPage
+            ? "block"
+            : "none";
+      });
+      prevBtn.disabled = currentPage === 0;
+      nextBtn.disabled = (currentPage + 1) * itemsPerPage >= teams.length;
+    }
+
+    function renderPage(withAnimation = true) {
+      if (withAnimation) {
+        teamList.classList.add("fade-out");
+        setTimeout(() => {
+          updateVisibleItems();
+          teamList.classList.remove("fade-out");
+          teamList.classList.add("fade-in");
+          setTimeout(() => teamList.classList.remove("fade-in"), 400);
+        }, 400);
+      } else {
+        updateVisibleItems();
+      }
+    }
+
+    prevBtn.addEventListener("click", () => {
+      if (currentPage > 0) {
+        currentPage--;
+        renderPage();
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if ((currentPage + 1) * itemsPerPage < teams.length) {
+        currentPage++;
+        renderPage();
+      }
+    });
+
+    // 첫 로드 시 첫 페이지만 표시
+    renderPage(false);
+  });
+</script>
+{% endblock %}

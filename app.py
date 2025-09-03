@@ -1,3 +1,4 @@
+from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import MongoClient
@@ -42,14 +43,14 @@ def get_current_user(request):
     return None
 
 # --- Routes ---
-@app.route("/")
+@app.route("/") # 홈 API
 def home():
     user = get_current_user(request)
     if user:
         return redirect(url_for("dashboard"))
     return redirect(url_for("login"))
 
-@app.route("/signup", methods=["GET", "POST"])
+@app.route("/signup", methods=["GET", "POST"])  # 회원가입 API
 def signup():
     if request.method == "POST":
         username = request.form["username"]
@@ -79,7 +80,7 @@ def signup():
 
     return render_template("signup.html")
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET", "POST"])  # 로그인 API
 def login():
     if request.method == "POST":
         username = request.form["username"]
@@ -96,7 +97,7 @@ def login():
 
     return render_template("login.html")
 
-@app.route("/dashboard")
+@app.route("/dashboard")    # 대시보드 API
 def dashboard():
     username = get_current_user(request)
     user = users_collection.find_one({"username": username})
@@ -104,7 +105,7 @@ def dashboard():
         return redirect(url_for("login"))
     return render_template("dashboard.html", user=user)
 
-@app.route("/logout")
+@app.route("/logout") # 로그아웃 API
 def logout():
     resp = make_response(redirect(url_for("login")))
     resp.set_cookie("token", "", expires=0)
@@ -114,7 +115,7 @@ def logout():
 def teamsignup():
     user = get_current_user(request)
     if not user:
-        return redirect(url_for("login"))
+        return "로그인 먼저 하십시오!"   #redirect(url_for("login")) <- 원래 코드
 
     if request.method == "POST":
         team_name = request.form["username"]  # 팀 이름
@@ -143,7 +144,8 @@ def teamsignup():
 def teamjoin():
     user = get_current_user(request)
     if not user:
-        return redirect(url_for("login"))
+        
+        return "로그인 먼저 하십시오!"     #redirect(url_for("login")) <- 원래 코드
 
     if request.method == "POST":
         week = int(request.form["week"])
@@ -167,6 +169,99 @@ def teamjoin():
         return redirect(url_for("dashboard"))
 
     return render_template("teamjoin.html")
+
+@app.route("/mypage", methods=["GET", "POST"])
+def mypage():
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
+
+    # DB에서 최신 유저 정보 가져오기
+    user = users_collection.find_one({"username": username})
+
+    if request.method == "POST":
+        # 이름 수정
+        new_name = request.form.get("nickname")
+        if new_name:
+            users_collection.update_one(
+                {"username": username},
+                {"$set": {"nickname": new_name}}
+            )
+            user["nickname"] = new_name
+
+        # 프로필 사진 업로드
+        profile_img = request.files.get("profile_img")
+        if profile_img:
+            ext = os.path.splitext(profile_img.filename)[1]
+            profile_filename = f"{username}_profile{ext}"
+            save_path = os.path.join(app.config["PROFILE_FOLDER"], profile_filename)
+            profile_img.save(save_path)
+
+            users_collection.update_one(
+                {"username": username},
+                {"$set": {"profile_img": profile_filename}}
+            )
+            user["profile_img"] = profile_filename
+
+        # POST 후 리다이렉트 → 최신 DB 정보 반영
+        return redirect(url_for("mypage"))
+
+    # 팀 리스트 가져오기 (0~20 week)
+    teams = []
+    for week in range(0, 21):
+        team = db["teams"].find_one({"week": week})
+        if team:
+            teams.append({"week": week, "team_name": team["team_name"]})
+        else:
+            teams.append({"week": week, "team_name": f"Team {100 + week}"})
+
+    return render_template("mypage.html", user=user, teams=teams)
+
+
+@app.route("/delete_profile") # 프로필 사진 삭제 API
+def delete_profile():
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
+
+    user = users_collection.find_one({"username": username})
+    if user and user.get("profile_img"):
+        # 파일 삭제
+        try:
+            os.remove(os.path.join(app.config["PROFILE_FOLDER"], user["profile_img"]))
+        except FileNotFoundError:
+            pass
+
+        # DB 정보 삭제
+        users_collection.update_one(
+            {"username": username},
+            {"$set": {"profile_img": None}}
+        )
+
+    return redirect(url_for("mypage"))
+
+
+@app.route("/update_profile_img", methods=["POST"])  # 프로필 사진 업데이트 API
+def update_profile_img():
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
+
+    user = users_collection.find_one({"username": username})
+    profile_img = request.files.get("profile_img")
+    if profile_img:
+        ext = os.path.splitext(profile_img.filename)[1]
+        profile_filename = f"{username}_profile{ext}"
+        save_path = os.path.join(app.config["PROFILE_FOLDER"], profile_filename)
+        profile_img.save(save_path)
+
+        users_collection.update_one(
+            {"username": username},
+            {"$set": {"profile_img": profile_filename}}
+        )
+
+    return redirect(url_for("mypage"))
+
 
 
 if __name__ == "__main__":

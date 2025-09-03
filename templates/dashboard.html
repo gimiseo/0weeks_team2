@@ -1,4 +1,4 @@
-{% extends "base_login.html" %}
+{% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <h2>Welcome, {{ user.nickname }}!</h2>
@@ -15,4 +15,5 @@
 <a href="{{ url_for('logout') }}">Logout</a>
 <a href="{{ url_for('teamjoin') }}">팁 합류</a>
 <a href="{{ url_for('teamsignup') }}">팀 생성</a>
+<a href="{{ url_for('mypage') }}">마이페이지</a>
 {% endblock %}
