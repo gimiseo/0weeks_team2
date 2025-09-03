@@ -33,7 +33,7 @@
                                 {% for week_data in weeks_data %}
                                 <article class="item card-{{ week_data.week }}" data-week="{{ week_data.week }}">
                                     <div class="demo-card{% if week_data.color == 'blue' %} blue{% elif week_data.color == 'gray' %} gray{% endif %}">
-                                        week{{ week_data.week }}
+                                        Week {{ week_data.week }}
                                     </div>
                                 </article>
                                 {% endfor %}
