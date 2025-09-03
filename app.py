@@ -316,13 +316,13 @@ def team_signup():
             "week": week,
             "roomPasswordHash": room_password_hash,
             "masterId": current_user["_id"],
-            "createdAt": datetime.datetime.utcnow(),
+            "createdAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9),
             "upvote": 0,  
             "members": [
                 {
                     "userId": current_user["_id"],
                     "role": "master",
-                    "joinedAt": datetime.datetime.utcnow()
+                    "joinedAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
                 }
             ],
             "posts": []  
@@ -491,7 +491,7 @@ def team_join(default_week=None):
         new_member = {
             "userId": current_user["_id"],
             "role": "member",
-            "joinedAt": datetime.datetime.utcnow()
+            "joinedAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
         }
         
         db["teams"].update_one(
@@ -553,7 +553,7 @@ def team_join_specific(team_id):
         new_member = {
             "userId": current_user["_id"],
             "role": "member",
-            "joinedAt": datetime.datetime.utcnow()
+            "joinedAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
         }
         
         db["teams"].update_one(
@@ -893,7 +893,7 @@ def team_post_write(team_id):
             "content": content,
             "author": author,
             "authorId": current_user["_id"],
-            "createdAt": datetime.datetime.utcnow(),
+            "createdAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9),
             "likes": 0
         }
         
@@ -1048,7 +1048,7 @@ def edit_post():
                     "$set": {
                         "posts.$.title": new_title,
                         "posts.$.content": new_content,
-                        "posts.$.updatedAt": datetime.datetime.utcnow()
+                        "posts.$.updatedAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
                     }
                 }
             )
@@ -1065,7 +1065,7 @@ def edit_post():
                         "$set": {
                             "posts.$.title": new_title,
                             "posts.$.content": new_content,
-                            "posts.$.updatedAt": datetime.datetime.utcnow()
+                            "posts.$.updatedAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
                         }
                     }
                 )
@@ -1473,7 +1473,7 @@ def add_comment():
         "author": current_user["nickname"],
         "authorId": current_user["_id"],
         "isReply": False,
-        "createdAt": datetime.datetime.utcnow()
+        "createdAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
     }
     
     # 포스트에 댓글 추가
@@ -1495,7 +1495,7 @@ def add_comment():
             "commentAuthorId": current_user["_id"],
             "commentContent": comment_content,
             "isRead": False,
-            "createdAt": datetime.datetime.utcnow()
+            "createdAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
         }
         db["notifications"].insert_one(notification)
     
@@ -1554,7 +1554,7 @@ def edit_comment():
         {"_id": ObjectId(team_id), "posts.title": post_title},
         {"$set": {
             f"posts.{post_index}.comments.{comment_index}.content": new_content,
-            f"posts.{post_index}.comments.{comment_index}.updatedAt": datetime.datetime.utcnow()
+            f"posts.{post_index}.comments.{comment_index}.updatedAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
         }}
     )
     
@@ -1649,7 +1649,7 @@ def add_reply():
         "authorId": current_user["_id"],
         "isReply": True,
         "parentCommentId": ObjectId(parent_comment_id),
-        "createdAt": datetime.datetime.utcnow()
+        "createdAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
     }
 
     result = db["teams"].update_one(
