@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="/static/main_page.css">
 </head>
 <body>
-    <div class="wwl-label">WeeklyWeLearned</div>
+    <div class="wwl-label" onclick="handleWWLClick()">WeeklyWeLearned</div>
     <div class="top-menu">
         <a href="#mypage" class="button is-primary">마이페이지</a>
-        <span class="logout-text">로그아웃</span>
+        <span class="logout-text" onclick="window.location.href='/logout'">로그아웃</span>
     </div>
 
     <div class="main-wrap container is-fluid">
@@ -88,6 +88,18 @@
     <script>
         window.currentWeek = {{ current_week | default(0) }};
         window.selectedWeek = {{ selected_week | default(0) }};
+
+        // WWL 라벨 클릭 처리 함수
+        function handleWWLClick() {
+            // 현재 페이지가 main_page인지 확인
+            if (window.location.pathname === '/main_page') {
+                // main_page에 있으면 새로고침
+                window.location.reload();
+            } else {
+                // 다른 페이지에 있으면 main_page로 이동
+                window.location.href = '/main_page';
+            }
+        }
     </script>
     <script src="/static/main_page.js"></script>
 </body>

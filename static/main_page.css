@@ -41,6 +41,7 @@ body {
     z-index: 2000;
     font-size: 30px;
     font-weight: 700;
+    cursor: pointer;
     color: #00c32e;
 }
 
