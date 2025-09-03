@@ -9,13 +9,19 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = "supersecretkey"  # ⚠️ change in production
 
 # --- MongoDB setup ---
-client = MongoClient("mongodb://localhost:27017/")  # or your MongoDB Atlas URI
+# MongoDB 연결 URI를 macOS 환경에 맞게 확인
+client = MongoClient('localhost', 27017) # localhost 대신 127.0.0.1 사용
 db = client["flask_jwt_auth"]
 users_collection = db["users"]
 
-PROFILE_FOLDER = "static/profile_imgs"
+# --- 파일 경로 설정 ---
+PROFILE_FOLDER = os.path.join(os.getcwd(), "static", "profile_imgs")  # 절대 경로로 변경
 os.makedirs(PROFILE_FOLDER, exist_ok=True)
 app.config["PROFILE_FOLDER"] = PROFILE_FOLDER
+
+UPLOAD_FOLDER = os.path.join(os.getcwd(), "static", "uploads")  # 업로드 폴더 경로
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # --- JWT helper functions ---
 def generate_jwt(username):
@@ -44,10 +50,8 @@ def get_current_user(request):
 # --- Routes ---
 @app.route("/")
 def home():
-    user = get_current_user(request)
-    if user:
-        return redirect(url_for("dashboard"))
-    return redirect(url_for("login"))
+    # 기본 페이지를 teampage로 리다이렉트
+    return redirect(url_for("teampage"))
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
@@ -168,6 +172,87 @@ def teamjoin():
 
     return render_template("teamjoin.html")
 
+# 작성된 글을 저장할 리스트
+posts = []
+
+@app.route('/teampagewrite', methods=['GET', 'POST'])
+def teampagewrite():
+    if request.method == 'POST':
+        # 폼 데이터 가져오기
+        title = request.form.get('title')
+        content = request.form.get('content')
+        author = request.form.get('author')
+        image_url = None
+
+        # 파일 업로드 처리
+        if 'image' in request.files:
+            image = request.files['image']
+            if image.filename != '':
+                image_path = os.path.join(app.config["UPLOAD_FOLDER"], image.filename)
+                image.save(image_path)
+                image_url = f"/static/uploads/{image.filename}"
+
+        # 데이터 저장
+        posts.append({'title': title, 'content': content, 'author': author, 'image_url': image_url})
+        # teampage로 리다이렉트
+        return redirect(url_for('teampage'))
+    return render_template('teampagewrite.html')
+
+@app.route('/teampage')
+def teampage():
+    # 저장된 글을 teampage.html에 전달
+    return render_template('teampage.html', posts=posts)
+
+@app.route('/delete_post', methods=['POST'])
+def delete_post():
+    post_title = request.form.get('post_title')
+    global posts
+    # 제목을 기준으로 해당 글 삭제
+    posts = [post for post in posts if post['title'] != post_title]
+    return redirect(url_for('teampage'))
+
+@app.route('/edit_post', methods=['GET'])
+def edit_post():
+    title = request.args.get('title')
+    post = next((post for post in posts if post['title'] == title), None)
+    if not post:
+        return "Post not found!", 404  # 글을 찾지 못한 경우 404 에러 반환
+    return render_template('edit_post.html', post=post)
+
+@app.route('/update_post', methods=['POST'])
+def update_post():
+    old_title = request.form.get('old_title')
+    new_title = request.form.get('title')
+    new_content = request.form.get('content')
+    global posts
+    for post in posts:
+        if post['title'] == old_title:
+            post['title'] = new_title
+            post['content'] = new_content
+            break
+    return redirect(url_for('teampage'))
+
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return {"error": "No image uploaded"}, 400
+
+    image = request.files['image']
+    if image.filename == '':
+        return {"error": "No selected file"}, 400
+
+    # 이미지 저장
+    image_path = os.path.join(app.config["UPLOAD_FOLDER"], image.filename)
+    image.save(image_path)
+
+    # 저장된 이미지의 URL 반환
+    image_url = f"/static/uploads/{image.filename}"
+    return {"url": image_url}, 200
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # macOS에서 실행 시 호스트를 명시적으로 설정
+    app.run('0.0.0.0', port=5001, debug=True)
+    # macOS에서 실행 시 호스트를 명시적으로 설정
+    app.run('0.0.0.0', port=5001, debug=True)
+    # macOS에서 실행 시 호스트를 명시적으로 설정
+    app.run('0.0.0.0', port=5001, debug=True)
