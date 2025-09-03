@@ -616,21 +616,10 @@ def team_page(team_id):
     has_upvoted = current_user["_id"] in team.get("upvotedUsers", [])
     
     # 각 글에 대해 현재 사용자가 좋아요했는지 확인하고 댓글 정렬
-    posts_with_like_status = []
-    # for post in team.get("posts", []):
-    #     post_copy = post.copy()
-    #     post_copy["has_liked"] = current_user["_id"] in post.get("likedUsers", [])
-        
-    #     # 댓글을 부모-자식 관계에 따라 정렬
-    #     sorted_comments = sort_comments_by_hierarchy(post.get("comments", []))
-    #     post_copy["comments"] = sorted_comments
-        
-    #     posts_with_like_status.append(post_copy)
-    
-    # Process posts to include post IDs
     posts_with_ids = []
     for post in team.get("posts", []):
         is_post_author = post.get("authorId") == current_user["_id"]
+        has_liked = current_user["_id"] in post.get("likedUsers", [])
         
         post_data = {
             "id": str(post.get("_id", "")),  # Convert ObjectId to string, empty if no _id
@@ -641,6 +630,7 @@ def team_page(team_id):
             "createdAt": post.get("createdAt"),
             "updatedAt": post.get("updatedAt"),
             "likes": post.get("likes", 0),
+            "has_liked": has_liked,
             
             "can_edit": is_post_author,
             "can_delete": is_post_author or is_team_master
@@ -718,6 +708,74 @@ def team_upvote():
         })
     else:
         return jsonify({"error": "추천 처리에 실패했습니다."}), 500
+
+@app.route("/post_like", methods=["POST"])
+def post_like():
+    """포스트 좋아요 기능"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    team_id = request.form.get("team_id")
+    post_id = request.form.get("post_id")
+    
+    if not team_id or not post_id:
+        return jsonify({"error": "팀 정보와 포스트 정보가 필요합니다."}), 400
+    
+    # ObjectId로 변환
+    try:
+        team_object_id = ObjectId(team_id)
+        post_object_id = ObjectId(post_id)
+    except:
+        return jsonify({"error": "잘못된 ID 형식입니다."}), 400
+    
+    # 팀 정보 조회
+    team = db["teams"].find_one({"_id": team_object_id})
+    if not team:
+        return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
+    
+    # 해당 포스트 찾기
+    post_found = False
+    for post in team.get("posts", []):
+        if post.get("_id") == post_object_id:
+            post_found = True
+            # 이미 좋아요했는지 확인
+            liked_users = post.get("likedUsers", [])
+            if current_user["_id"] in liked_users:
+                return jsonify({"error": "이미 좋아요하신 포스트입니다."}), 400
+            break
+    
+    if not post_found:
+        return jsonify({"error": "포스트를 찾을 수 없습니다."}), 404
+    
+    # 좋아요 수 1 증가 및 좋아요한 사용자 목록에 추가
+    result = db["teams"].update_one(
+        {"_id": team_object_id, "posts._id": post_object_id},
+        {
+            "$inc": {"posts.$.likes": 1},
+            "$addToSet": {"posts.$.likedUsers": current_user["_id"]}
+        }
+    )
+    
+    if result.modified_count > 0:
+        # 업데이트된 좋아요 수 조회
+        updated_team = db["teams"].find_one({"_id": team_object_id})
+        new_like_count = 0
+        for post in updated_team.get("posts", []):
+            if post.get("_id") == post_object_id:
+                new_like_count = post.get("likes", 0)
+                break
+        
+        return jsonify({
+            "success": True,
+            "new_like_count": new_like_count
+        })
+    else:
+        return jsonify({"error": "좋아요 처리에 실패했습니다."}), 500
 
 @app.route("/team_post_write/<team_id>", methods=["GET", "POST"])
 def team_post_write(team_id):
