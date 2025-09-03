@@ -4,7 +4,8 @@ import datetime
 import random
 
 # MongoDB 연결
-client = MongoClient("mongodb://localhost:27017/")
+# client = MongoClient('mongodb://hwiskim:Gnltj7_AA13@15.164.218.130',27017)
+client = MongoClient("mongodb://localhost:27017/") 
 db = client["flask_jwt_auth"]
 users_collection = db["users"]
 teams_collection = db["teams"]

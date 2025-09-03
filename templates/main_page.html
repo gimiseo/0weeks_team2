@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Weekly We Learned</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/main_page.css">
 </head>
 <body>
@@ -16,6 +17,15 @@
         <div class="navbar-end">
             <div class="navbar-item">
                 <div class="is-flex is-align-items-center">
+                    <!-- 알림 아이콘 -->
+                    <div class="mr-3" style="position: relative;">
+                        <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
+                            <i class="fas fa-bell"></i>
+                        </span>
+                        <!-- 읽지 않은 알림 수 배지 -->
+                        <span id="notification-badge" class="tag is-danger is-small" style="position: absolute; top: -5px; right: -5px; display: none; min-width: 20px; height: 20px; font-size: 12px; line-height: 1;">0</span>
+                    </div>
+                    
                     <!-- 프로필 이미지와 닉네임 -->
                     <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
                         <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
@@ -26,6 +36,17 @@
             </div>
         </div>
     </nav>
+
+    <!-- 알림 드롭다운 -->
+    <div id="notification-dropdown" class="box" style="position: fixed; top: 60px; right: 20px; width: 350px; max-height: 400px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+        <div class="is-flex is-justify-content-between is-align-items-center mb-3">
+            <h6 class="title is-6 mb-0">알림</h6>
+            <button class="button is-small is-light" onclick="markAllAsRead()">모두 읽음</button>
+        </div>
+        <div id="notification-list">
+            <!-- 알림들이 여기에 동적으로 추가됩니다 -->
+        </div>
+    </div>
 
     <div class="main-wrap container is-fluid">
         <!-- columns 를 정확히 반씩(is-6/is-6) + is-vcentered 로 세로 중앙 -->
@@ -100,7 +121,8 @@
                                             {% for member in team.members[:3] %}
                                             <div class="avatar-frame mr-2" 
                                                  title="{{ member.nickname }} ({{ member.role }})"
-                                                 style="background-image: url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}');">
+                                                 style="background-image: url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}'); cursor: pointer;"
+                                                 onclick="event.stopPropagation(); window.location.href='/user/{{ member.username }}';">
                                             </div>
                                             {% endfor %}
                                             {% if team.member_count > 3 %}
@@ -197,6 +219,175 @@
                 });
             }
         }
+
+        // 알림 관련 함수들
+        function loadNotifications() {
+            console.log('Loading notifications...');
+            fetch('/get_notifications')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Notifications data:', data);
+                    if (data.notifications) {
+                        displayNotifications(data.notifications);
+                    } else if (data.error) {
+                        console.error('Error from server:', data.error);
+                        document.getElementById('notification-list').innerHTML = '<p class="has-text-danger has-text-centered">알림을 불러올 수 없습니다.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                    document.getElementById('notification-list').innerHTML = '<p class="has-text-danger has-text-centered">알림을 불러오는 중 오류가 발생했습니다.</p>';
+                });
+        }
+
+        function displayNotifications(notifications) {
+            const notificationList = document.getElementById('notification-list');
+            
+            if (notifications.length === 0) {
+                notificationList.innerHTML = '<p class="has-text-grey has-text-centered">알림이 없습니다.</p>';
+                return;
+            }
+
+            notificationList.innerHTML = notifications.map(notification => {
+                // 알림 타입에 따른 아이콘 설정
+                const icon = notification.type === 'comment' ? 'fa-comment' : 'fa-bell';
+                const iconColor = notification.isRead ? '#dbdbdb' : '#00c32e';
+                
+                // 댓글 작성자 정보 표시
+                let authorInfo = '';
+                if (notification.commentAuthor) {
+                    authorInfo = `<span class="has-text-weight-semibold">${notification.commentAuthor}</span>님이 `;
+                }
+                
+                return `
+                    <div class="notification-item p-3 mb-2 ${notification.isRead ? 'has-background-light' : 'has-background-white'}" 
+                         style="border-radius: 8px; border-left: 3px solid ${notification.isRead ? '#dbdbdb' : '#00c32e'}; cursor: pointer; position: relative;"
+                         onclick="handleNotificationClick('${notification._id}', '${notification.postTitle}', '${notification.teamName}', ${notification.week})">
+                        <div class="is-flex is-align-items-start">
+                            <div class="mr-3" style="margin-top: 2px;">
+                                <i class="fas ${icon}" style="color: ${iconColor}; font-size: 14px;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <p class="has-text-weight-semibold is-size-7 ${notification.isRead ? 'has-text-grey' : 'has-text-dark'}">
+                                    ${authorInfo}댓글을 남겼습니다
+                                </p>
+                                <p class="mt-1 is-size-7 ${notification.isRead ? 'has-text-grey-light' : 'has-text-grey'}">
+                                    "${notification.postTitle}" 글에서
+                                </p>
+                                ${notification.commentContent ? `
+                                    <p class="mt-1 is-size-7 has-text-grey" style="font-style: italic; border-left: 2px solid #e0e0e0; padding-left: 8px;">
+                                        "${notification.commentContent.length > 80 ? notification.commentContent.substring(0, 80) + '...' : notification.commentContent}"
+                                    </p>
+                                ` : ''}
+                                <p class="mt-1 is-size-7 has-text-grey-light">
+                                    <i class="fas fa-clock mr-1"></i>${notification.createdAt}
+                                </p>
+                            </div>
+                        </div>
+                        ${!notification.isRead ? '<div class="has-background-primary" style="width: 8px; height: 8px; border-radius: 50%; position: absolute; right: 8px; top: 8px;"></div>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleNotificationClick(notificationId, postTitle, teamName, week) {
+            // 알림을 읽음으로 표시
+            fetch('/mark_notification_read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    notification_id: notificationId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 해당 글로 이동
+                    window.location.href = `/teampage?team=${encodeURIComponent(teamName)}&week=${week}#post-${encodeURIComponent(postTitle)}`;
+                }
+            })
+            .catch(error => console.error('Error marking notification as read:', error));
+        }
+
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notification-dropdown');
+            if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                dropdown.style.display = 'block';
+                loadNotifications();
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        function markAllAsRead() {
+            fetch('/get_notifications')
+                .then(response => response.json())
+                .then(data => {
+                    const unreadNotifications = data.notifications.filter(n => !n.isRead);
+                    const promises = unreadNotifications.map(notification => 
+                        fetch('/mark_notification_read', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                notification_id: notification._id
+                            })
+                        })
+                    );
+                    
+                    return Promise.all(promises);
+                })
+                .then(() => {
+                    loadNotifications();
+                    updateNotificationBadge();
+                })
+                .catch(error => console.error('Error marking all as read:', error));
+        }
+
+        function updateNotificationBadge() {
+            console.log('Updating notification badge...');
+            fetch('/get_unread_count')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Unread count:', data.count);
+                    const badge = document.getElementById('notification-badge');
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 99 ? '99+' : data.count;
+                        badge.style.display = 'flex';
+                        badge.style.justifyContent = 'center';
+                        badge.style.alignItems = 'center';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating notification badge:', error);
+                });
+        }
+
+        // 알림 드롭다운 외부 클릭 시 닫기
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('notification-dropdown');
+            const icon = document.getElementById('notification-icon');
+            
+            if (!dropdown.contains(event.target) && !icon.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // 페이지 로드 시 알림 배지 업데이트
+        document.addEventListener('DOMContentLoaded', function() {
+            updateNotificationBadge();
+            
+            // 30초마다 알림 배지 업데이트
+            setInterval(updateNotificationBadge, 30000);
+        });
     </script>
     <script src="/static/main_page.js"></script>
 </body>

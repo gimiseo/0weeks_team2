@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ target_user.nickname }}님의 프로필 – WeeklyWeLearned</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body { 
+      background:#f6fbf9; 
+      padding-top: 3.25rem;
+    }
+    .wwl-label { 
+      font-size:30px; 
+      font-weight:700; 
+      color:#00c32e !important;
+      text-decoration: none;
+    }
+    .wwl-label:hover {
+      color: #00a025 !important;
+    }
+    .logout-text:hover {
+      color: #ff3860 !important;
+    }
+    .team-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+      margin-bottom: 20px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+    .team-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, .15);
+    }
+    .profile-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .profile-image {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+      margin: 0 auto 20px;
+    }
+    .member-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+      margin-right: 8px;
+    }
+    
+    .week-badge {
+      background: linear-gradient(135deg, #00c32e, #00a025);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 25px;
+      font-weight: 700;
+      font-size: 18px;
+      display: inline-block;
+      box-shadow: 0 3px 10px rgba(0, 195, 46, 0.3);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 상단 통합 네비게이션 바 -->
+  <nav class="navbar is-white has-shadow is-fixed-top" style="z-index: 2000;">
+    <div class="navbar-brand">
+      <a class="navbar-item wwl-label" href="/main_page" style="cursor: pointer;">WeeklyWeLearned</a>
+    </div>
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <div class="is-flex is-align-items-center">
+          <!-- 알림 아이콘 -->
+          <div class="mr-3" style="position: relative;">
+            <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
+              <i class="fas fa-bell"></i>
+            </span>
+            <!-- 읽지 않은 알림 수 배지 -->
+            <span id="notification-badge" class="tag is-danger is-small" style="position: absolute; top: -5px; right: -5px; display: none; min-width: 20px; height: 20px; font-size: 12px; line-height: 1;">0</span>
+          </div>
+          
+          <!-- 프로필 이미지와 닉네임 -->
+          <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
+            <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
+            <span class="has-text-weight-semibold">{{ current_user.nickname }}</span>
+          </div>
+          <span class="logout-text" onclick="window.location.href='/logout'" style="cursor: pointer; font-weight: 600; color: #363636;">로그아웃</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 알림 드롭다운 -->
+  <div id="notification-dropdown" class="box" style="position: fixed; top: 60px; right: 20px; width: 350px; max-height: 400px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+    <div class="is-flex is-justify-content-between is-align-items-center mb-3">
+      <h6 class="title is-6 mb-0">알림</h6>
+      <button class="button is-small is-light" onclick="markAllAsRead()">모두 읽음</button>
+    </div>
+    <div id="notification-list">
+      <!-- 알림들이 여기에 동적으로 추가됩니다 -->
+    </div>
+  </div>
+
+  <!-- 뒤로가기 버튼 -->
+  <div class="is-flex pl-4 mt-4">
+    <a href="javascript:history.back()" class="button" style="background: none; border: none; box-shadow: none;">
+      <span class="icon">
+        <i class="fas fa-arrow-left"></i>
+      </span>
+      <span>뒤로가기</span>
+    </a>
+  </div>
+
+  <!-- 메인 컨텐츠 -->
+  <section class="section">
+    <div class="container">
+      <!-- 프로필 카드 -->
+      <div class="profile-card">
+        <div class="profile-image" style="background-image: url('/static/profile_imgs/{{ target_user.profile_img if target_user.profile_img else 'default-avatar.jpg' }}');"></div>
+        <h1 class="title is-3">{{ target_user.nickname }}</h1>
+        <p class="subtitle is-5 has-text-grey">@{{ target_user.username }}</p>
+        <div class="tags has-addons is-centered">
+          <span class="tag is-primary">소속 팀</span>
+          <span class="tag is-info">{{ teams|length }}개</span>
+        </div>
+      </div>
+
+      <!-- 소속 팀 목록 -->
+      <h2 class="title is-4 mb-4">
+        <span class="icon-text">
+          <span class="icon">
+            <i class="fas fa-users"></i>
+          </span>
+          <span>소속 팀</span>
+        </span>
+      </h2>
+
+      {% if teams %}
+        <div class="columns is-multiline">
+          {% for team in teams %}
+          <div class="column is-half">
+            <div class="team-card" onclick="window.location.href='/teampage?team={{ team.teamName }}&week={{ team.week }}'" style="cursor: pointer;">
+              <div class="is-flex is-justify-content-between is-align-items-start mb-3">
+                <div>
+                  <span class="week-badge">{{ team.week }}주차</span>
+                  <h3 class="title is-5 mb-2">{{ team.teamName }}</h3>
+                </div>
+                <div class="tags">
+                  {% for member in team.members %}
+                    {% if member.username == target_user.username and member.role == 'master' %}
+                      <span class="tag is-warning">팀장</span>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              
+              <!-- 팀 멤버들 -->
+              <div class="is-flex is-align-items-center" style="flex-wrap: wrap; gap: 8px;">
+                <span class="has-text-grey is-size-7 mr-2">팀원:</span>
+                {% for member in team.members %}
+                <div class="is-flex is-align-items-center mr-2">
+                  <div class="member-avatar" 
+                       style="background-image: url('/static/profile_imgs/{{ member.profile_img if member.profile_img else 'default-avatar.jpg' }}'); cursor: pointer;"
+                       onclick="event.stopPropagation(); window.location.href='/user/{{ member.username }}';"
+                       title="{{ member.nickname }}"></div>
+                  <span class="is-size-7">{{ member.nickname }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="notification is-light">
+          <div class="has-text-centered">
+            <span class="icon is-large has-text-grey-light">
+              <i class="fas fa-users fa-3x"></i>
+            </span>
+            <p class="title is-5 has-text-grey">아직 소속된 팀이 없습니다</p>
+            <p class="has-text-grey">{{ target_user.nickname }}님이 팀에 가입하면 여기에 표시됩니다.</p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <script>
+    // 알림 관련 함수들
+    function loadNotifications() {
+      fetch('/get_notifications')
+        .then(response => response.json())
+        .then(data => {
+          if (data.notifications) {
+            displayNotifications(data.notifications);
+          }
+        })
+        .catch(error => console.error('Error loading notifications:', error));
+    }
+
+    function displayNotifications(notifications) {
+      const notificationList = document.getElementById('notification-list');
+      
+      if (notifications.length === 0) {
+        notificationList.innerHTML = '<p class="has-text-grey has-text-centered">알림이 없습니다.</p>';
+        return;
+      }
+
+      notificationList.innerHTML = notifications.map(notification => {
+        // 알림 타입에 따른 아이콘 설정
+        const icon = notification.type === 'comment' ? 'fa-comment' : 'fa-bell';
+        const iconColor = notification.isRead ? '#dbdbdb' : '#00c32e';
+        
+        // 댓글 작성자 정보 표시
+        let authorInfo = '';
+        if (notification.commentAuthor) {
+          authorInfo = `<span class="has-text-weight-semibold">${notification.commentAuthor}</span>님이 `;
+        }
+        
+        return `
+          <div class="notification-item p-3 mb-2 ${notification.isRead ? 'has-background-light' : 'has-background-white'}" 
+               style="border-radius: 8px; border-left: 3px solid ${notification.isRead ? '#dbdbdb' : '#00c32e'}; cursor: pointer; position: relative;"
+               onclick="handleNotificationClick('${notification._id}', '${notification.postTitle}', '${notification.teamName}', ${notification.week})">
+            <div class="is-flex is-align-items-start">
+              <div class="mr-3" style="margin-top: 2px;">
+                <i class="fas ${icon}" style="color: ${iconColor}; font-size: 14px;"></i>
+              </div>
+              <div style="flex: 1;">
+                <p class="has-text-weight-semibold is-size-7 ${notification.isRead ? 'has-text-grey' : 'has-text-dark'}">
+                  ${authorInfo}댓글을 남겼습니다
+                </p>
+                <p class="mt-1 is-size-7 ${notification.isRead ? 'has-text-grey-light' : 'has-text-grey'}">
+                  "${notification.postTitle}" 글에서
+                </p>
+                ${notification.commentContent ? `
+                  <p class="mt-1 is-size-7 has-text-grey" style="font-style: italic; border-left: 2px solid #e0e0e0; padding-left: 8px;">
+                    "${notification.commentContent.length > 80 ? notification.commentContent.substring(0, 80) + '...' : notification.commentContent}"
+                  </p>
+                ` : ''}
+                <p class="mt-1 is-size-7 has-text-grey-light">
+                  <i class="fas fa-clock mr-1"></i>${notification.createdAt}
+                </p>
+              </div>
+            </div>
+            ${!notification.isRead ? '<div class="has-background-primary" style="width: 8px; height: 8px; border-radius: 50%; position: absolute; right: 8px; top: 8px;"></div>' : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleNotificationClick(notificationId, postTitle, teamName, week) {
+      // 알림을 읽음으로 표시
+      fetch('/mark_notification_read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notification_id: notificationId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 해당 글로 이동
+          window.location.href = `/teampage?team=${encodeURIComponent(teamName)}&week=${week}#post-${encodeURIComponent(postTitle)}`;
+        }
+      })
+      .catch(error => console.error('Error marking notification as read:', error));
+    }
+
+    function toggleNotifications() {
+      const dropdown = document.getElementById('notification-dropdown');
+      if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        dropdown.style.display = 'block';
+        loadNotifications();
+      } else {
+        dropdown.style.display = 'none';
+      }
+    }
+
+    function markAllAsRead() {
+      fetch('/get_notifications')
+        .then(response => response.json())
+        .then(data => {
+          const unreadNotifications = data.notifications.filter(n => !n.isRead);
+          const promises = unreadNotifications.map(notification => 
+            fetch('/mark_notification_read', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                notification_id: notification._id
+              })
+            })
+          );
+          
+          return Promise.all(promises);
+        })
+        .then(() => {
+          loadNotifications();
+          updateNotificationBadge();
+        })
+        .catch(error => console.error('Error marking all as read:', error));
+    }
+
+    function updateNotificationBadge() {
+      fetch('/get_unread_count')
+        .then(response => response.json())
+        .then(data => {
+          const badge = document.getElementById('notification-badge');
+          if (data.count > 0) {
+            badge.textContent = data.count > 99 ? '99+' : data.count;
+            badge.style.display = 'flex';
+            badge.style.justifyContent = 'center';
+            badge.style.alignItems = 'center';
+          } else {
+            badge.style.display = 'none';
+          }
+        })
+        .catch(error => console.error('Error updating notification badge:', error));
+    }
+
+    // 알림 드롭다운 외부 클릭 시 닫기
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('notification-dropdown');
+      const icon = document.getElementById('notification-icon');
+      
+      if (!dropdown.contains(event.target) && !icon.contains(event.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    // 페이지 로드 시 알림 배지 업데이트
+    document.addEventListener('DOMContentLoaded', function() {
+      updateNotificationBadge();
+      
+      // 30초마다 알림 배지 업데이트
+      setInterval(updateNotificationBadge, 30000);
+    });
+  </script>
+</body>
+</html>

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>마이페이지 – WeeklyWeLearned</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     body { 
       background:#f6fbf9; 
@@ -37,6 +38,58 @@
     
     .profile-pic {
       position: relative;
+      display: inline-block;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .profile-pic:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 195, 46, 0.3);
+    }
+    
+    .profile-pic::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    
+    .profile-pic:hover::after {
+      opacity: 1;
+    }
+    
+    .profile-pic .edit-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 24px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .profile-pic:hover .edit-overlay {
+      opacity: 1;
+    }
+    
+    .profile-pic img {
+      transition: filter 0.3s ease;
+    }
+    
+    .profile-pic:hover img {
+      filter: brightness(0.8);
     }
     
     .profile-actions {
@@ -102,7 +155,9 @@
     
     .week-team {
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
     }
     
     .week {
@@ -137,6 +192,7 @@
     .team-name {
       font-weight: 600;
       color: #333;
+      font-size: 16px;
     }
     
     .pagination-controls {
@@ -186,6 +242,15 @@
     <div class="navbar-end">
       <div class="navbar-item">
         <div class="is-flex is-align-items-center">
+          <!-- 알림 아이콘 -->
+          <div class="mr-3" style="position: relative;">
+            <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
+              <i class="fas fa-bell"></i>
+            </span>
+            <!-- 읽지 않은 알림 수 배지 -->
+            <span id="notification-badge" class="tag is-danger is-small" style="position: absolute; top: -5px; right: -5px; display: none; min-width: 20px; height: 20px; font-size: 12px; line-height: 1;">0</span>
+          </div>
+          
           <!-- 프로필 이미지와 닉네임 -->
           <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
             <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
@@ -197,6 +262,17 @@
     </div>
   </nav>
 
+  <!-- 알림 드롭다운 -->
+  <div id="notification-dropdown" class="box" style="position: fixed; top: 60px; right: 20px; width: 350px; max-height: 400px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+    <div class="is-flex is-justify-content-between is-align-items-center mb-3">
+      <h6 class="title is-6 mb-0">알림</h6>
+      <button class="button is-small is-light" onclick="markAllAsRead()">모두 읽음</button>
+    </div>
+    <div id="notification-list">
+      <!-- 알림들이 여기에 동적으로 추가됩니다 -->
+    </div>
+  </div>
+
   <section class="section">
     <div class="container">
 
@@ -205,17 +281,26 @@
     <div class="profile-pic">
       <img id="profileImg"
         src="/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}"
-        alt="프로필사진" style="width:120px;height:120px;border-radius:50%;cursor:pointer;">
+        alt="프로필사진" 
+        style="width:120px;height:120px;border-radius:50%;cursor:pointer;" 
+        onclick="uploadProfile()"
+        title="클릭하여 프로필 사진 변경">
+      
+      <!-- 수정 가능 오버레이 -->
+      <div class="edit-overlay">
+        <i class="fas fa-camera"></i>
+      </div>
+      
+      <!-- 숨겨진 파일 입력 -->
+      <input type="file" id="profileFileInput" accept="image/*" style="display: none;" onchange="handleProfileUpload(this)">
     </div>
 
     <div class="profile-name">
       <h2 class="title is-4">{{ current_user.nickname or current_user.username }}</h2>
       <p class="subtitle is-6">@{{ current_user.username }}</p>
-    </div>
-
-    <div class="profile-buttons">
-      <a href="/team_signup" class="btn">팀 생성</a>
-      <a href="/team_join" class="btn">팀 가입</a>
+      <p class="is-size-7 has-text-grey" style="margin-top: -10px;">
+        <i class="fas fa-info-circle"></i> 프로필 사진을 클릭하시면 변경하실 수 있습니다.
+      </p>
     </div>
   </div>
 
@@ -226,15 +311,18 @@
     {% for team in teams %}
     <div class="week-team-bar" onclick="window.location.href='/teampage?team={{ team.teamName }}&week={{ team.week }}'">
       <div class="week-team">
-        <span class="week">{{ team.week }} week</span>
+        <span class="week">{{ team.week }}주차</span>
+        <span class="team-name">{{ team.teamName }}</span>
       </div>
       <div class="tag-container">
         <div class="profile-pics">
           {% for member in team.members[:3] %}
-          <div class="profile-circle" style="background-image: url('/static/profile_imgs/{{ member.profile_img if member.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center;"></div>
+          <div class="profile-circle" 
+               style="background-image: url('/static/profile_imgs/{{ member.profile_img if member.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; cursor: pointer;"
+               onclick="event.stopPropagation(); window.location.href='/user/{{ member.username }}';"
+               title="{{ member.nickname }}"></div>
           {% endfor %}
         </div>
-        <span class="team-name">{{ team.teamName }}</span>
       </div>
     </div>
     {% endfor %}
@@ -303,6 +391,219 @@
     // 첫 로드 시 첫 페이지만 표시
     renderPage(false);
   });
+
+  // 알림 관련 함수들
+  function loadNotifications() {
+    fetch('/get_notifications')
+      .then(response => response.json())
+      .then(data => {
+        if (data.notifications) {
+          displayNotifications(data.notifications);
+        }
+      })
+      .catch(error => console.error('Error loading notifications:', error));
+  }
+
+  function displayNotifications(notifications) {
+    const notificationList = document.getElementById('notification-list');
+    
+    if (notifications.length === 0) {
+      notificationList.innerHTML = '<p class="has-text-grey has-text-centered">알림이 없습니다.</p>';
+      return;
+    }
+
+    notificationList.innerHTML = notifications.map(notification => {
+      // 알림 타입에 따른 아이콘 설정
+      const icon = notification.type === 'comment' ? 'fa-comment' : 'fa-bell';
+      const iconColor = notification.isRead ? '#dbdbdb' : '#00c32e';
+      
+      // 댓글 작성자 정보 표시
+      let authorInfo = '';
+      if (notification.commentAuthor) {
+        authorInfo = `<span class="has-text-weight-semibold">${notification.commentAuthor}</span>님이 `;
+      }
+      
+      return `
+        <div class="notification-item p-3 mb-2 ${notification.isRead ? 'has-background-light' : 'has-background-white'}" 
+             style="border-radius: 8px; border-left: 3px solid ${notification.isRead ? '#dbdbdb' : '#00c32e'}; cursor: pointer; position: relative;"
+             onclick="handleNotificationClick('${notification._id}', '${notification.postTitle}', '${notification.teamName}', ${notification.week})">
+          <div class="is-flex is-align-items-start">
+            <div class="mr-3" style="margin-top: 2px;">
+              <i class="fas ${icon}" style="color: ${iconColor}; font-size: 14px;"></i>
+            </div>
+            <div style="flex: 1;">
+              <p class="has-text-weight-semibold is-size-7 ${notification.isRead ? 'has-text-grey' : 'has-text-dark'}">
+                ${authorInfo}댓글을 남겼습니다
+              </p>
+              <p class="mt-1 is-size-7 ${notification.isRead ? 'has-text-grey-light' : 'has-text-grey'}">
+                "${notification.postTitle}" 글에서
+              </p>
+              ${notification.commentContent ? `
+                <p class="mt-1 is-size-7 has-text-grey" style="font-style: italic; border-left: 2px solid #e0e0e0; padding-left: 8px;">
+                  "${notification.commentContent.length > 80 ? notification.commentContent.substring(0, 80) + '...' : notification.commentContent}"
+                </p>
+              ` : ''}
+              <p class="mt-1 is-size-7 has-text-grey-light">
+                <i class="fas fa-clock mr-1"></i>${notification.createdAt}
+              </p>
+            </div>
+          </div>
+          ${!notification.isRead ? '<div class="has-background-primary" style="width: 8px; height: 8px; border-radius: 50%; position: absolute; right: 8px; top: 8px;"></div>' : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function handleNotificationClick(notificationId, postTitle, teamName, week) {
+    // 알림을 읽음으로 표시
+    fetch('/mark_notification_read', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        notification_id: notificationId
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // 해당 글로 이동
+        window.location.href = `/teampage?team=${encodeURIComponent(teamName)}&week=${week}#post-${encodeURIComponent(postTitle)}`;
+      }
+    })
+    .catch(error => console.error('Error marking notification as read:', error));
+  }
+
+  function toggleNotifications() {
+    const dropdown = document.getElementById('notification-dropdown');
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+      dropdown.style.display = 'block';
+      loadNotifications();
+    } else {
+      dropdown.style.display = 'none';
+    }
+  }
+
+  function markAllAsRead() {
+    fetch('/get_notifications')
+      .then(response => response.json())
+      .then(data => {
+        const unreadNotifications = data.notifications.filter(n => !n.isRead);
+        const promises = unreadNotifications.map(notification => 
+          fetch('/mark_notification_read', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              notification_id: notification._id
+            })
+          })
+        );
+        
+        return Promise.all(promises);
+      })
+      .then(() => {
+        loadNotifications();
+        updateNotificationBadge();
+      })
+      .catch(error => console.error('Error marking all as read:', error));
+  }
+
+  function updateNotificationBadge() {
+    fetch('/get_unread_count')
+      .then(response => response.json())
+      .then(data => {
+        const badge = document.getElementById('notification-badge');
+        if (data.count > 0) {
+          badge.textContent = data.count > 99 ? '99+' : data.count;
+          badge.style.display = 'flex';
+          badge.style.justifyContent = 'center';
+          badge.style.alignItems = 'center';
+        } else {
+          badge.style.display = 'none';
+        }
+      })
+      .catch(error => console.error('Error updating notification badge:', error));
+  }
+
+  // 알림 드롭다운 외부 클릭 시 닫기
+  document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('notification-dropdown');
+    const icon = document.getElementById('notification-icon');
+    
+    if (!dropdown.contains(event.target) && !icon.contains(event.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  // 페이지 로드 시 알림 배지 업데이트
+  document.addEventListener('DOMContentLoaded', function() {
+    updateNotificationBadge();
+    
+    // 30초마다 알림 배지 업데이트
+    setInterval(updateNotificationBadge, 30000);
+  });
+
+  // 프로필 이미지 업로드 관련 함수들
+  function uploadProfile() {
+    document.getElementById('profileFileInput').click();
+  }
+
+  function handleProfileUpload(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // 파일 크기 확인 (16MB 제한)
+      if (file.size > 16 * 1024 * 1024) {
+        alert('파일 크기는 16MB를 초과할 수 없습니다.');
+        return;
+      }
+      
+      // 파일 형식 확인
+      const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('허용되는 이미지 형식: PNG, JPG, JPEG, GIF, WEBP');
+        return;
+      }
+      
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('profile_image', file);
+      
+      // 업로드 요청
+      fetch('/update_profile_image', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 프로필 이미지 업데이트
+          const profileImg = document.getElementById('profileImg');
+          const navProfileImg = document.querySelector('[onclick="window.location.href=\'/mypage\'"] div');
+          
+          // 캐시 방지를 위해 timestamp 추가
+          const timestamp = new Date().getTime();
+          const newImageUrl = `/static/profile_imgs/${data.new_profile_img}?t=${timestamp}`;
+          
+          profileImg.src = newImageUrl;
+          if (navProfileImg) {
+            navProfileImg.style.backgroundImage = `url('${newImageUrl}')`;
+          }
+          
+          alert('프로필 이미지가 성공적으로 업데이트되었습니다!');
+        } else {
+          alert(data.error || '프로필 이미지 업데이트에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('프로필 이미지 업데이트 중 오류가 발생했습니다.');
+      });
+    }
+  }
 </script>
 </body>
 </html>

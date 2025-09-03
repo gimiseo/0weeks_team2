@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>팀 페이지 – WeeklyWeLearned</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     body { 
       background:#f6fbf9; 
@@ -55,6 +56,15 @@
     <div class="navbar-end">
       <div class="navbar-item">
         <div class="is-flex is-align-items-center">
+          <!-- 알림 아이콘 -->
+          <div class="mr-3" style="position: relative;">
+            <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
+              <i class="fas fa-bell"></i>
+            </span>
+            <!-- 읽지 않은 알림 수 배지 -->
+            <span id="notification-badge" class="tag is-danger is-small" style="position: absolute; top: -5px; right: -5px; display: none; min-width: 20px; height: 20px; font-size: 12px; line-height: 1;">0</span>
+          </div>
+          
           <!-- 프로필 이미지와 닉네임 -->
           <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
             <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
@@ -65,6 +75,17 @@
       </div>
     </div>
   </nav>
+
+  <!-- 알림 드롭다운 -->
+  <div id="notification-dropdown" class="box" style="position: fixed; top: 60px; right: 20px; width: 350px; max-height: 400px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+    <div class="is-flex is-justify-content-between is-align-items-center mb-3">
+      <h6 class="title is-6 mb-0">알림</h6>
+      <button class="button is-small is-light" onclick="markAllAsRead()">모두 읽음</button>
+    </div>
+    <div id="notification-list">
+      <!-- 알림들이 여기에 동적으로 추가됩니다 -->
+    </div>
+  </div>
 
   <!-- 뒤로가기 버튼 -->
   <div class="is-flex pl-4 mt-4">
@@ -81,22 +102,33 @@
     <div class="container">
       <h1 class="title is-3">{{ team.teamName }}</h1>
       <p class="subtitle is-5 has-text-grey">{{ team.description }}</p>
-      <!-- 좋아요 버튼 및 좋아요 수 -->
+      <!-- 추천 버튼 및 추천 수 -->
       <div class="is-flex is-align-items-center mb-4">
+        {% if team.has_upvoted %}
+        <button class="button is-light is-small" disabled>
+          <span class="icon">
+            <i class="fas fa-thumbs-up"></i>
+          </span>
+          <span>추천됨</span>
+        </button>
+        {% else %}
         <button class="button is-light is-small" onclick="handleTeamLike(this)">
           <span class="icon">
             <i class="fas fa-thumbs-up"></i>
           </span>
-          <span>좋아요</span>
+          <span>추천</span>
         </button>
-        <span class="ml-2 has-text-grey is-size-7">좋아요 <span class="team-like-count">{{ team.upvote }}</span>개</span>
+        {% endif %}
+        <span class="ml-2 has-text-grey is-size-7">추천 <span class="team-like-count">{{ team.upvote }}</span>개</span>
       </div>
       <!-- 팀 멤버 사진 및 이름 -->
       <div class="is-flex is-align-items-center mb-4" style="flex-wrap: wrap; gap: 16px;">
         {% for member in team.members %}
-        <div style="text-align:center;">
+        <div style="text-align:center; cursor: pointer;" onclick="window.location.href='/user/{{ member.username }}'">
           <div class="avatar-frame" 
-               style="background-image:url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}');">
+               style="background-image:url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}'); transition: transform 0.2s ease;"
+               onmouseover="this.style.transform='scale(1.1)'"
+               onmouseout="this.style.transform='scale(1)'">
           </div>
           <p class="mt-2">{{ member.nickname }}</p>
           {% if member.role == 'master' %}
@@ -148,7 +180,7 @@
       <!-- 작성된 글 표시 -->
       {% if team.posts %}
         {% for post in team.posts %}
-        <div class="content-box" style="position: relative;">
+        <div class="content-box" style="position: relative;" id="post-{{ post.title }}">
           <h2 class="title is-4">
             {{ post.title }}
             <span class="has-text-grey is-size-6 ml-3">- {{ post.author }}</span>
@@ -167,13 +199,152 @@
           </div>
           <!-- 좋아요 버튼 및 좋아요 수 -->
           <div class="mt-3 is-flex is-align-items-center">
+            {% if post.has_liked %}
+            <button class="button is-light is-small" disabled>
+              <span class="icon">
+                <i class="fas fa-heart"></i>
+              </span>
+              <span>좋아요됨</span>
+            </button>
+            {% else %}
             <button class="button is-light is-small" onclick="handleLike(this)">
               <span class="icon">
-                <i class="fas fa-thumbs-up"></i>
+                <i class="fas fa-heart"></i>
               </span>
               <span>좋아요</span>
             </button>
+            {% endif %}
             <span class="ml-2 has-text-grey is-size-7">좋아요 <span class="like-count">{{ post.likes | default(0) }}</span>개</span>
+          </div>
+          
+          <!-- 댓글 섹션 -->
+          <div class="mt-4">
+            <h4 class="title is-6">댓글 <span class="has-text-grey is-size-7">({{ post.comments | length }}개)</span></h4>
+            
+            <!-- 기존 댓글들 표시 -->
+            <div class="comments-list" id="comments-{{ loop.index }}">
+              {% if post.comments %}
+                {% for comment in post.comments %}
+                <div class="comment-item mb-3 p-3 {{ 'ml-4' if comment.get('isReply') else '' }}" 
+                     style="background: {{ '#f0f8ff' if comment.get('isReply') else '#f8f9fa' }}; border-radius: 8px; border-left: 3px solid {{ '#007bff' if comment.get('isReply') else '#00c32e' }};"
+                     id="comment-{{ comment._id }}">
+                  <div class="is-flex is-justify-content-between is-align-items-start">
+                    <div style="flex: 1;">
+                      {% if comment.get('isReply') %}
+                      <p class="has-text-info is-size-7 mb-1">
+                        <i class="fas fa-reply mr-1"></i>답댓글
+                      </p>
+                      {% endif %}
+                      <p class="has-text-weight-semibold is-size-7">{{ comment.author }}</p>
+                      <div class="comment-content mt-1" id="comment-content-{{ comment._id }}">
+                        <p>{{ comment.content }}</p>
+                      </div>
+                      <!-- 수정 폼 (숨김) -->
+                      <div class="comment-edit-form mt-1" id="edit-form-{{ comment._id }}" style="display: none;">
+                        <div class="field has-addons">
+                          <div class="control is-expanded">
+                            <input class="input is-small" type="text" value="{{ comment.content }}" 
+                                   id="edit-input-{{ comment._id }}">
+                          </div>
+                          <div class="control">
+                            <button class="button is-success is-small" 
+                                    onclick="saveCommentEdit('{{ comment._id }}', '{{ post.title }}', '{{ team.teamName }}', {{ team.week }})">
+                              저장
+                            </button>
+                          </div>
+                          <div class="control">
+                            <button class="button is-light is-small" 
+                                    onclick="cancelCommentEdit('{{ comment._id }}')">
+                              취소
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- 댓글 액션 버튼들 -->
+                      <div class="comment-actions mt-2" style="font-size: 12px;">
+                        {% if not comment.get('isReply') %}
+                        <button class="button is-text is-small" style="padding: 2px 6px; height: auto;" 
+                                onclick="showReplyForm('{{ comment._id }}')">
+                          <span class="icon is-small">
+                            <i class="fas fa-reply"></i>
+                          </span>
+                          <span>답댓글</span>
+                        </button>
+                        {% endif %}
+                        
+                        {% if comment.authorId == current_user._id %}
+                        <button class="button is-text is-small" style="padding: 2px 6px; height: auto;" 
+                                onclick="editComment('{{ comment._id }}')">
+                          <span class="icon is-small">
+                            <i class="fas fa-edit"></i>
+                          </span>
+                          <span>수정</span>
+                        </button>
+                        <button class="button is-text has-text-danger is-small" style="padding: 2px 6px; height: auto;" 
+                                onclick="deleteComment('{{ comment._id }}', '{{ post.title }}', '{{ team.teamName }}', {{ team.week }})">
+                          <span class="icon is-small">
+                            <i class="fas fa-trash"></i>
+                          </span>
+                          <span>삭제</span>
+                        </button>
+                        {% endif %}
+                      </div>
+                      
+                      <!-- 답댓글 작성 폼 (숨김) -->
+                      {% if not comment.get('isReply') %}
+                      <div class="reply-form mt-2" id="reply-form-{{ comment._id }}" style="display: none;">
+                        <div class="field has-addons">
+                          <div class="control is-expanded">
+                            <input class="input is-small" type="text" placeholder="답댓글을 입력하세요..." 
+                                   id="reply-input-{{ comment._id }}" 
+                                   onkeypress="handleReplyKeyPress(event, '{{ comment._id }}', '{{ post.title }}', '{{ team.teamName }}', {{ team.week }})">
+                          </div>
+                          <div class="control">
+                            <button class="button is-primary is-small" 
+                                    onclick="addReply('{{ comment._id }}', '{{ post.title }}', '{{ team.teamName }}', {{ team.week }})">
+                              <span class="icon is-small">
+                                <i class="fas fa-paper-plane"></i>
+                              </span>
+                            </button>
+                          </div>
+                          <div class="control">
+                            <button class="button is-light is-small" 
+                                    onclick="hideReplyForm('{{ comment._id }}')">
+                              취소
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      {% endif %}
+                    </div>
+                    <span class="has-text-grey is-size-7">{{ comment.createdAt.strftime('%m/%d %H:%M') if comment.createdAt else '' }}</span>
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <p class="has-text-grey is-size-7">아직 댓글이 없습니다.</p>
+              {% endif %}
+            </div>
+            
+            <!-- 댓글 작성 폼 (모든 로그인 사용자) -->
+            <div class="mt-3">
+              <div class="field has-addons">
+                <div class="control is-expanded">
+                  <input class="input is-small" type="text" placeholder="댓글을 입력하세요..." 
+                         id="comment-input-{{ loop.index }}" 
+                         onkeypress="handleCommentKeyPress(event, '{{ post.title }}', '{{ team.teamName }}', {{ team.week }}, {{ loop.index }})">
+                </div>
+                <div class="control">
+                  <button class="button is-primary is-small" 
+                          onclick="addComment('{{ post.title }}', '{{ team.teamName }}', {{ team.week }}, {{ loop.index }})">
+                    <span class="icon is-small">
+                      <i class="fas fa-paper-plane"></i>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         {% endfor %}
@@ -185,17 +356,73 @@
 
   <script>
     function handleLike(button) {
-      const likeCountSpan = button.nextElementSibling.querySelector('.like-count');
-      let likeCount = parseInt(likeCountSpan.textContent, 10);
-      likeCount += 1;
-      likeCountSpan.textContent = likeCount;
+      // 게시글 제목 찾기 (버튼의 상위 요소에서 제목 추출)
+      const postContainer = button.closest('.content-box');
+      const titleElement = postContainer.querySelector('h2.title');
+      const postTitle = titleElement.textContent.split(' - ')[0].trim();
+      
+      // 서버에 글 좋아요 요청 보내기
+      fetch('/post_like', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_name: '{{ team.teamName }}',
+          week: parseInt('{{ team.week }}'),
+          post_title: postTitle
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 화면의 좋아요 수 업데이트
+          const likeCountSpan = button.nextElementSibling.querySelector('.like-count');
+          likeCountSpan.textContent = data.new_like_count;
+          
+          // 버튼을 비활성화하고 텍스트 변경
+          button.disabled = true;
+          button.innerHTML = '<span class="icon"><i class="fas fa-heart"></i></span><span>좋아요됨</span>';
+        } else {
+          alert('좋아요 처리 중 오류가 발생했습니다: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('좋아요 처리 중 오류가 발생했습니다.');
+      });
     }
 
     function handleTeamLike(button) {
-      const likeCountSpan = document.querySelector('.team-like-count');
-      let likeCount = parseInt(likeCountSpan.textContent, 10);
-      likeCount += 1;
-      likeCountSpan.textContent = likeCount;
+      // 서버에 팀 추천 요청 보내기
+      fetch('/team_upvote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_name: '{{ team.teamName }}',
+          week: parseInt('{{ team.week }}')
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 화면의 추천수 업데이트
+          const likeCountSpan = document.querySelector('.team-like-count');
+          likeCountSpan.textContent = data.new_upvote_count;
+          
+          // 버튼을 비활성화하고 텍스트 변경
+          button.disabled = true;
+          button.innerHTML = '<span class="icon is-small"><i class="fas fa-thumbs-up"></i></span><span>추천됨</span>';
+        } else {
+          alert('추천 처리 중 오류가 발생했습니다: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('추천 처리 중 오류가 발생했습니다.');
+      });
     }
 
     function confirmDeleteTeam() {
@@ -221,6 +448,511 @@
         form.submit();
       }
     }
+
+    // 댓글 관련 함수들
+    function handleCommentKeyPress(event, postTitle, teamName, week, postIndex) {
+      if (event.key === 'Enter') {
+        addComment(postTitle, teamName, week, postIndex);
+      }
+    }
+
+    function addComment(postTitle, teamName, week, postIndex) {
+      const input = document.getElementById(`comment-input-${postIndex}`);
+      const content = input.value.trim();
+      
+      if (!content) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      fetch('/add_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          post_title: postTitle,
+          team_name: teamName,
+          week: week,
+          comment_content: content
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 댓글 목록에 새 댓글 추가
+          const commentsList = document.getElementById(`comments-${postIndex}`);
+          const newCommentHtml = `
+            <div class="comment-item mb-3 p-3" style="background: #f8f9fa; border-radius: 8px; border-left: 3px solid #00c32e;">
+              <div class="is-flex is-justify-content-between is-align-items-start">
+                <div>
+                  <p class="has-text-weight-semibold is-size-7">${data.comment.author}</p>
+                  <p class="mt-1">${data.comment.content}</p>
+                </div>
+                <span class="has-text-grey is-size-7">${data.comment.createdAt}</span>
+              </div>
+            </div>
+          `;
+          
+          // "아직 댓글이 없습니다" 메시지가 있다면 제거
+          const noCommentsMsg = commentsList.querySelector('.has-text-grey');
+          if (noCommentsMsg && noCommentsMsg.textContent.includes('아직 댓글이 없습니다')) {
+            noCommentsMsg.remove();
+          }
+          
+          commentsList.insertAdjacentHTML('beforeend', newCommentHtml);
+          
+          // 댓글 수 업데이트
+          const commentCountSpan = commentsList.previousElementSibling.querySelector('span');
+          const currentCount = parseInt(commentCountSpan.textContent.match(/\d+/)[0]);
+          commentCountSpan.textContent = `(${currentCount + 1}개)`;
+          
+          // 입력 필드 초기화
+          input.value = '';
+        } else {
+          alert(data.error || '댓글 추가에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 추가 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 댓글 수정 관련 함수들
+    function editComment(commentId) {
+      // 댓글 내용 숨기고 수정 폼 표시
+      document.getElementById(`comment-content-${commentId}`).style.display = 'none';
+      document.getElementById(`edit-form-${commentId}`).style.display = 'block';
+    }
+
+    function cancelCommentEdit(commentId) {
+      // 수정 폼 숨기고 댓글 내용 표시
+      document.getElementById(`comment-content-${commentId}`).style.display = 'block';
+      document.getElementById(`edit-form-${commentId}`).style.display = 'none';
+    }
+
+    function saveCommentEdit(commentId, postTitle, teamName, week) {
+      const newContent = document.getElementById(`edit-input-${commentId}`).value.trim();
+      
+      if (!newContent) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      fetch('/edit_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_name: teamName,
+          week: week,
+          post_title: postTitle,
+          comment_id: commentId,
+          new_content: newContent
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 댓글 내용 업데이트
+          document.querySelector(`#comment-content-${commentId} p`).textContent = newContent;
+          cancelCommentEdit(commentId);
+        } else {
+          alert(data.error || '댓글 수정에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 수정 중 오류가 발생했습니다.');
+      });
+    }
+
+    function deleteComment(commentId, postTitle, teamName, week) {
+      if (!confirm('정말로 이 댓글을 삭제하시겠습니까?\n(답댓글이 있다면 함께 삭제됩니다)')) {
+        return;
+      }
+
+      fetch('/delete_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_name: teamName,
+          week: week,
+          post_title: postTitle,
+          comment_id: commentId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 페이지 새로고침으로 간단하게 처리 (백엔드에서 이미 정확히 처리됨)
+          if (data.message) {
+            alert(data.message);
+          }
+          location.reload();
+          const currentCount = parseInt(commentCountSpan.textContent.match(/\d+/)[0]);
+          if (currentCount > 1) {
+            commentCountSpan.textContent = `(${currentCount - 1}개)`;
+          } else {
+            commentCountSpan.textContent = `(0개)`;
+            commentsList.innerHTML = '<p class="has-text-grey is-size-7">아직 댓글이 없습니다.</p>';
+          }
+        } else {
+          alert(data.error || '댓글 삭제에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 삭제 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 답댓글 관련 함수들
+    function showReplyForm(commentId) {
+      document.getElementById(`reply-form-${commentId}`).style.display = 'block';
+      document.getElementById(`reply-input-${commentId}`).focus();
+    }
+
+    function hideReplyForm(commentId) {
+      document.getElementById(`reply-form-${commentId}`).style.display = 'none';
+      document.getElementById(`reply-input-${commentId}`).value = '';
+    }
+
+    function handleReplyKeyPress(event, commentId, postTitle, teamName, week) {
+      if (event.key === 'Enter') {
+        addReply(commentId, postTitle, teamName, week);
+      }
+    }
+
+    function addReply(parentCommentId, postTitle, teamName, week) {
+      const input = document.getElementById(`reply-input-${parentCommentId}`);
+      const content = input.value.trim();
+      
+      if (!content) {
+        alert('답댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      // 디버깅용 콘솔 로그
+      console.log('=== addReply 호출 ===');
+      console.log('parentCommentId:', parentCommentId);
+      console.log('postTitle:', postTitle);
+      console.log('teamName:', teamName);
+      console.log('week:', week, '(type:', typeof week, ')');
+      console.log('content:', content);
+
+      const requestData = {
+        team_name: teamName,
+        week: parseInt(week), // 명시적으로 숫자로 변환
+        post_title: postTitle,
+        parent_comment_id: parentCommentId,
+        reply_content: content
+      };
+
+      console.log('요청 데이터:', requestData);
+
+      fetch('/add_reply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 답댓글을 부모 댓글 바로 다음에 추가
+          const parentComment = document.getElementById(`comment-${parentCommentId}`);
+          const newReplyHtml = `
+            <div class="comment-item mb-3 p-3 ml-4" 
+                 style="background: #f0f8ff; border-radius: 8px; border-left: 3px solid #007bff;"
+                 id="comment-${data.reply._id}">
+              <div class="is-flex is-justify-content-between is-align-items-start">
+                <div style="flex: 1;">
+                  <p class="has-text-info is-size-7 mb-1">
+                    <i class="fas fa-reply mr-1"></i>답댓글
+                  </p>
+                  <p class="has-text-weight-semibold is-size-7">${data.reply.author}</p>
+                  <div class="comment-content mt-1" id="comment-content-${data.reply._id}">
+                    <p>${data.reply.content}</p>
+                  </div>
+                  
+                  <!-- 수정 폼 (숨김) -->
+                  <div class="comment-edit-form mt-1" id="edit-form-${data.reply._id}" style="display: none;">
+                    <div class="field has-addons">
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" value="${data.reply.content}" 
+                               id="edit-input-${data.reply._id}">
+                      </div>
+                      <div class="control">
+                        <button class="button is-success is-small" 
+                                onclick="saveCommentEdit('${data.reply._id}', '${postTitle}', '${teamName}', ${week})">
+                          저장
+                        </button>
+                      </div>
+                      <div class="control">
+                        <button class="button is-light is-small" 
+                                onclick="cancelCommentEdit('${data.reply._id}')">
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="comment-actions mt-2" style="font-size: 12px;">
+                    <button class="button is-text is-small" style="padding: 2px 6px; height: auto;" 
+                            onclick="editComment('${data.reply._id}')">
+                      <span class="icon is-small">
+                        <i class="fas fa-edit"></i>
+                      </span>
+                      <span>수정</span>
+                    </button>
+                    <button class="button is-text has-text-danger is-small" style="padding: 2px 6px; height: auto;" 
+                            onclick="deleteComment('${data.reply._id}', '${postTitle}', '${teamName}', ${week})">
+                      <span class="icon is-small">
+                        <i class="fas fa-trash"></i>
+                      </span>
+                      <span>삭제</span>
+                    </button>
+                  </div>
+                </div>
+                <span class="has-text-grey is-size-7">${data.reply.createdAt}</span>
+              </div>
+            </div>
+          `;
+          
+          parentComment.insertAdjacentHTML('afterend', newReplyHtml);
+          
+          // 댓글 수 업데이트
+          const commentsList = parentComment.closest('.comments-list');
+          const commentCountSpan = commentsList.previousElementSibling.querySelector('span');
+          const currentCount = parseInt(commentCountSpan.textContent.match(/\d+/)[0]);
+          commentCountSpan.textContent = `(${currentCount + 1}개)`;
+          
+          // 답댓글 폼 숨기기
+          hideReplyForm(parentCommentId);
+        } else {
+          alert(data.error || '답댓글 추가에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('답댓글 추가 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 알림 관련 함수들
+    function loadNotifications() {
+      console.log('Loading notifications...');
+      fetch('/get_notifications')
+        .then(response => {
+          console.log('Response status:', response.status);
+          return response.json();
+        })
+        .then(data => {
+          console.log('Notifications data:', data);
+          if (data.notifications) {
+            displayNotifications(data.notifications);
+          } else if (data.error) {
+            console.error('Error from server:', data.error);
+            document.getElementById('notification-list').innerHTML = '<p class="has-text-danger has-text-centered">알림을 불러올 수 없습니다.</p>';
+          }
+        })
+        .catch(error => {
+          console.error('Error loading notifications:', error);
+          document.getElementById('notification-list').innerHTML = '<p class="has-text-danger has-text-centered">알림을 불러오는 중 오류가 발생했습니다.</p>';
+        });
+    }
+
+    function displayNotifications(notifications) {
+      console.log('Displaying notifications:', notifications);
+      const notificationList = document.getElementById('notification-list');
+      
+      if (!notificationList) {
+        console.error('notification-list element not found!');
+        return;
+      }
+      
+      if (notifications.length === 0) {
+        notificationList.innerHTML = '<p class="has-text-grey has-text-centered">알림이 없습니다.</p>';
+        return;
+      }
+
+      try {
+        notificationList.innerHTML = notifications.map(notification => {
+          // 알림 타입에 따른 아이콘 설정
+          const icon = notification.type === 'comment' ? 'fa-comment' : 
+                      notification.type === 'reply' ? 'fa-reply' : 'fa-bell';
+          const iconColor = notification.isRead ? '#dbdbdb' : '#00c32e';
+          
+          // 댓글/답댓글 작성자 정보 표시
+          let authorInfo = '';
+          let actionText = '';
+          
+          if (notification.type === 'comment' && notification.commentAuthor) {
+            authorInfo = `<span class="has-text-weight-semibold">${notification.commentAuthor}</span>님이 `;
+            actionText = '댓글을 남겼습니다';
+          } else if (notification.type === 'reply' && notification.replyAuthor) {
+            authorInfo = `<span class="has-text-weight-semibold">${notification.replyAuthor}</span>님이 `;
+            actionText = '답댓글을 남겼습니다';
+          }
+          
+          // 알림 내용 (댓글 또는 답댓글 내용)
+          const contentText = notification.type === 'reply' ? notification.replyContent : notification.commentContent;
+          
+          return `
+            <div class="notification-item p-3 mb-2 ${notification.isRead ? 'has-background-light' : 'has-background-white'}" 
+                 style="border-radius: 8px; border-left: 3px solid ${notification.isRead ? '#dbdbdb' : '#00c32e'}; cursor: pointer; position: relative;"
+                 onclick="handleNotificationClick('${notification._id}', '${notification.postTitle}', '${notification.teamName}', ${notification.week})">
+              <div class="is-flex is-align-items-start">
+                <div class="mr-3" style="margin-top: 2px;">
+                  <i class="fas ${icon}" style="color: ${iconColor}; font-size: 14px;"></i>
+                </div>
+                <div style="flex: 1;">
+                  <p class="has-text-weight-semibold is-size-7 ${notification.isRead ? 'has-text-grey' : 'has-text-dark'}">
+                    ${authorInfo}${actionText}
+                  </p>
+                  <p class="mt-1 is-size-7 ${notification.isRead ? 'has-text-grey-light' : 'has-text-grey'}">
+                    "${notification.postTitle}" 글에서
+                  </p>
+                  ${contentText ? `
+                    <p class="mt-1 is-size-7 has-text-grey" style="font-style: italic; border-left: 2px solid #e0e0e0; padding-left: 8px;">
+                      "${contentText.length > 80 ? contentText.substring(0, 80) + '...' : contentText}"
+                    </p>
+                  ` : ''}
+                  <p class="mt-1 is-size-7 has-text-grey-light">
+                    <i class="fas fa-clock mr-1"></i>${notification.createdAt}
+                  </p>
+                </div>
+              </div>
+              ${!notification.isRead ? '<div class="has-background-primary" style="width: 8px; height: 8px; border-radius: 50%; position: absolute; right: 8px; top: 8px;"></div>' : ''}
+            </div>
+          `;
+        }).join('');
+        console.log('Notifications displayed successfully');
+      } catch (error) {
+        console.error('Error displaying notifications:', error);
+        notificationList.innerHTML = '<p class="has-text-danger has-text-centered">알림 표시 중 오류가 발생했습니다.</p>';
+      }
+    }
+
+    function handleNotificationClick(notificationId, postTitle, teamName, week) {
+      // 알림을 읽음으로 표시
+      fetch('/mark_notification_read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notification_id: notificationId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 해당 글로 이동
+          window.location.href = `/teampage?team=${encodeURIComponent(teamName)}&week=${week}#post-${encodeURIComponent(postTitle)}`;
+        }
+      })
+      .catch(error => console.error('Error marking notification as read:', error));
+    }
+
+    function toggleNotifications() {
+      console.log('Toggling notifications...');
+      const dropdown = document.getElementById('notification-dropdown');
+      if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        console.log('Opening notification dropdown');
+        dropdown.style.display = 'block';
+        loadNotifications();
+      } else {
+        console.log('Closing notification dropdown');
+        dropdown.style.display = 'none';
+      }
+    }
+
+    function markAllAsRead() {
+      fetch('/get_notifications')
+        .then(response => response.json())
+        .then(data => {
+          const unreadNotifications = data.notifications.filter(n => !n.isRead);
+          const promises = unreadNotifications.map(notification => 
+            fetch('/mark_notification_read', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                notification_id: notification._id
+              })
+            })
+          );
+          
+          return Promise.all(promises);
+        })
+        .then(() => {
+          loadNotifications();
+          updateNotificationBadge();
+        })
+        .catch(error => console.error('Error marking all as read:', error));
+    }
+
+    function updateNotificationBadge() {
+      console.log('Updating notification badge...');
+      fetch('/get_unread_count')
+        .then(response => response.json())
+        .then(data => {
+          console.log('Unread count:', data.count);
+          const badge = document.getElementById('notification-badge');
+          if (data.count > 0) {
+            badge.textContent = data.count > 99 ? '99+' : data.count;
+            badge.style.display = 'flex';
+            badge.style.justifyContent = 'center';
+            badge.style.alignItems = 'center';
+          } else {
+            badge.style.display = 'none';
+          }
+        })
+        .catch(error => {
+          console.error('Error updating notification badge:', error);
+        });
+    }
+
+    // 알림 드롭다운 외부 클릭 시 닫기
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('notification-dropdown');
+      const icon = document.getElementById('notification-icon');
+      
+      if (!dropdown.contains(event.target) && !icon.contains(event.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    // 페이지 로드 시 알림 배지 업데이트
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Page loaded, initializing notifications...');
+      
+      // 알림 관련 요소들이 존재하는지 확인
+      const notificationIcon = document.getElementById('notification-icon');
+      const notificationBadge = document.getElementById('notification-badge');
+      const notificationDropdown = document.getElementById('notification-dropdown');
+      const notificationList = document.getElementById('notification-list');
+      
+      console.log('Notification elements found:', {
+        icon: !!notificationIcon,
+        badge: !!notificationBadge,
+        dropdown: !!notificationDropdown,
+        list: !!notificationList
+      });
+      
+      updateNotificationBadge();
+      
+      // 30초마다 알림 배지 업데이트
+      setInterval(updateNotificationBadge, 30000);
+    });
   </script>
 </body>
 </html>
