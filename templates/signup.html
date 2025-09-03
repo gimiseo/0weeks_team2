@@ -1,8 +1,13 @@
-{% extends "base.html" %}
-{% block title %}회원가입{% endblock %}
+{% extends "user_input_base.html" %}
+{% block title %}WWL{% endblock %}
 {% block content %}
 <div class="container">
-    <h2 class="title">회원가입</h2>
+    
+    <div class = "sign-up-head">
+      <a href="{{ url_for('login') }}" class="link-btn" >← 뒤로가기</a> 
+      <h2 class="title">회원가입</h2>
+    </div>
+    
     <form method="post" class="form-box" enctype="multipart/form-data">
         <input type="text" name="username" placeholder="아이디" required><br>
         <input type="password" name="password" placeholder="비밀번호" required><br>
@@ -12,8 +17,8 @@
         <!-- 프로필 이미지 업로드 -->
         <input type="file" name="profile_img" accept="image/*"><br>
         
-        <button type="submit" class="btn">회원가입</button>
+        <button type="submit" class="btn">등록하기</button>
     </form>
-    <a href="{{ url_for('login') }}" class="link-btn">← 뒤로가기</a>
+
 </div>
 {% endblock %}

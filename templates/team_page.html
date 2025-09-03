@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WWL</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="/static/alarm.js"></script>
+  <style>
+    body { background:#f6fbf9; }
+    
+    .fixed-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 35px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .wwl-label{ 
+      font-size:30px; 
+      font-weight:700; 
+      color:#00c32e !important;
+      text-decoration: none;
+    }
+    .top-menu {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+    }
+    .logout-text:hover {
+        color: #ff3860;
+    }
+    .content-box {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .content-box img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    .avatar-frame {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+    }
+    .post-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .member-container {
+      text-align: center;
+      min-width: 80px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background-color 0.2s ease;
+    }
+    .member-container:hover {
+      background-color: rgba(0, 195, 46, 0.1);
+    }
+    .avatar-frame {
+      /* 기존 스타일 + */
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .avatar-frame:hover {
+      transform: scale(1.05);
+    }
+
+    .button.is-danger.is-outlined:hover {
+      background-color: #ff3860;
+      border-color: #ff3860;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(255, 56, 96, 0.3);
+    }
+
+    /* 알림 드롭다운 스타일 */
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #dbdbdb;
+      border-radius: 8px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      width: 350px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 3000;
+      display: none;
+    }
+    
+    .notification-dropdown.is-active {
+      display: block;
+    }
+    
+    .notification-item {
+      padding: 15px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .notification-item:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .notification-item.is-unread {
+      background-color: #e8f4fd;
+      border-left: 4px solid #3273dc;
+    }
+    
+    .notification-header {
+      padding: 15px;
+      border-bottom: 2px solid #f5f5f5;
+      background-color: #fafafa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .notification-empty {
+      padding: 30px;
+      text-align: center;
+      color: #999;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      display: none;
+      min-width: 20px;
+      height: 20px;
+      font-size: 12px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+    <!-- 상단 통합 네비게이션 바 -->
+    <nav class="navbar is-white has-shadow is-fixed-top" style="z-index: 2000;">
+        <div class="navbar-brand">
+        <a class="navbar-item wwl-label" href="/main_page" style="cursor: pointer;">WeeklyWeLearned</a>
+        </div>
+        <div class="navbar-end">
+        <div class="navbar-item">
+            <div class="is-flex is-align-items-center">
+            <!-- 알림 아이콘 -->
+            <div class="mr-3" style="position: relative;">
+              <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
+                <i class="fas fa-bell"></i>
+              </span>
+              <span id="notification-badge" class="tag is-danger is-small notification-badge">0</span>
+              
+              <!-- 알림 드롭다운 -->
+              <div id="notification-dropdown" class="notification-dropdown">
+                <div class="notification-header">
+                  <h3 class="title is-6 mb-0">알림</h3>
+                  <div>
+                    <button class="button is-small is-text" onclick="markAllAsRead()">모두 읽음</button>
+                    <button class="button is-small is-text has-text-danger" onclick="clearAllNotifications()">모두 삭제</button>
+                  </div>
+                </div>
+                <div id="notification-list">
+                  <div class="notification-empty">
+                    <i class="fas fa-bell-slash has-text-grey-light"></i>
+                    <p>알림이 없습니다</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 프로필 이미지와 닉네임 -->
+            <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/user/{{ current_user.username }}'">
+                <div style="width: 32px; height: 32px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
+                <span class="has-text-weight-semibold">{{ current_user.nickname }}</span>
+            </div>
+            <span class="logout-text" onclick="window.location.href='/logout'" style="cursor: pointer; font-weight: 600; color: #363636;">로그아웃</span>
+            </div>
+        </div>
+        </div>
+    </nav>
+
+  <!-- 메인 컨테이너 -->
+  <section class="section" style="margin-top: 70px; padding-top: 1rem;">
+    <div class="container">
+      <!-- 뒤로가기 버튼 -->
+      <div class="mb-3">
+        <a href="javascript:history.back()" class="button is-small" style="background: none; border: none; box-shadow: none; padding-left: 0;">
+          <span class="icon">
+            <i class="fas fa-arrow-left"></i>
+          </span>
+          <span>뒤로가기</span>
+        </a>
+      </div>
+      
+      <!-- 팀 정보 표시 -->
+      <h1 class="title is-3">{{ team.teamName }}</h1>
+      <div class="subtitle is-6 mb-4">Week {{ team.week }} · {{ team.description }}</div>
+      
+      <!-- 추천 버튼 및 추천 수 -->
+      <div class="is-flex is-align-items-center mb-4">
+        {% if team.has_upvoted %}
+        <button class="button is-light is-small" disabled>
+          <span class="icon">
+            <i class="fas fa-thumbs-up"></i>
+          </span>
+          <span>추천됨</span>
+        </button>
+        {% else %}
+        <button class="button is-light is-small" onclick="handleTeamLike(this)">
+          <span class="icon">
+            <i class="fas fa-thumbs-up"></i>
+          </span>
+          <span>추천</span>
+        </button>
+        {% endif %}
+        <span class="ml-2 has-text-grey is-size-7">추천 <span class="team-like-count">{{ team.upvote }}</span>개</span>
+      </div>
+      
+      <!-- 팀 멤버 사진 및 이름 -->
+      <div class="is-flex mb-4" style="flex-wrap: wrap; gap: 20px;">
+        {% for member in team.members %}
+        <div class="member-container" onclick="window.location.href='/user/{{ member.username }}'">
+          <div class="avatar-frame" 
+              style="background-image:url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}'); width: 60px; height: 60px; margin: 0 auto; {% if member.role == 'master' %}border-color: #ff9800;{% endif %}">
+          </div>
+          <p class="member-nickname">{{ member.nickname }}</p>
+          <div style="height: 24px; display: flex; align-items: center; justify-content: center;">
+            {% if member.role == 'master' %}
+            <span class="tag is-small is-warning">팀장</span>
+            {% elif member.role == 'admin' %}
+            <span class="tag is-small is-primary">관리자</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      
+      <!-- 액션 버튼들 부분 (team_page.html) -->
+      <div class="mb-4 is-flex is-justify-content-space-between is-align-items-center team-actions">
+        <div>
+          {% if is_member %}
+          <a href="/team_post_write/{{ team.id }}" class="button is-success">
+            <span class="icon is-small">
+              <i class="fas fa-plus"></i>
+            </span>
+            <span>글 작성</span>
+          </a>
+          {% else %}
+          <a href="/team_join/{{ team.id }}" class="button is-info">
+            <span class="icon is-small">
+              <i class="fas fa-user-plus"></i>
+            </span>
+            <span>팀 가입</span>
+          </a>
+          {% endif %}
+        </div>
+        
+        <!-- 팀 마스터만 볼 수 있는 팀 삭제 버튼 -->
+        {% if is_master %}
+        <div>
+          <form method="POST" action="/delete_team" style="display: inline;">
+            <input type="hidden" name="team_id" value="{{ team.id }}">
+            <button type="submit" class="button is-danger is-outlined" 
+                    style="transition: all 0.2s ease;"
+                    onclick="return confirm('⚠️ 경고: 팀을 삭제하면 모든 게시글과 댓글이 영구적으로 삭제됩니다.\n\n정말로 「{{ team.teamName }}」 팀을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')">
+              <span class="icon is-small">
+                <i class="fas fa-trash-alt"></i>
+              </span>
+              <span>팀 삭제</span>
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      
+      <!-- 작성된 글 표시 -->
+      {% if team.posts %}
+        {% for post in team.posts %}
+        <div class="box" style="position: relative;">
+          <article class="media">
+            <div class="media-content">
+            <div class="content">
+                <div class="mb-3">
+                <div class="mb-2">
+                    <span class="title is-4">{{ post.title }}</span>
+                    <span class="title is-6 has-text-grey-light mx-2">-</span>
+                    <span class="has-text-weight-semibold is-size-6">{{ post.author }}</span>
+                </div>
+                <div>
+                    <span class="has-text-grey is-size-6">{{ post.createdAt.strftime('%Y-%m-%d %H:%M') if post.createdAt else '' }}</span>
+                </div>
+                </div>
+                <div>
+                {{ post.content | safe }}
+                </div>
+                
+                <!-- 포스트 액션 버튼들 (좋아요, 수정, 삭제) -->
+                <div class="post-actions">
+                  <!-- 좋아요 버튼 -->
+                  <div class="is-flex is-align-items-center">
+                    {% if post.has_liked %}
+                    <button class="button is-light is-small" disabled>
+                      <span class="icon is-small">
+                        <i class="fas fa-heart" style="color: #ff3860;"></i>
+                      </span>
+                      <span>좋아요됨</span>
+                    </button>
+                    {% else %}
+                    <button class="button is-light is-small" onclick="handlePostLike(this, '{{ post.id }}')">
+                      <span class="icon is-small">
+                        <i class="fas fa-heart"></i>
+                      </span>
+                      <span>좋아요</span>
+                    </button>
+                    {% endif %}
+                    <span class="ml-2 has-text-grey is-size-7">좋아요 <span class="post-like-count">{{ post.likes }}</span>개</span>
+                  </div>
+                  
+                  <!-- 수정/삭제 버튼 -->
+                  {% if post.can_edit or post.can_delete %}
+                  <div class="buttons">
+                    <!-- Edit button - only show if user can edit -->
+                    {% if post.can_edit %}
+                    <a href="/edit_post?post_id={{ post.id }}&team_id={{ team.id }}" 
+                      class="button is-info is-small">
+                      <span class="icon is-small">
+                        <i class="fas fa-edit"></i>
+                      </span>
+                      <span>수정</span>
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Delete button - only show if user can delete -->
+                    {% if post.can_delete %}
+                    <form method="POST" action="/delete_post" style="display: inline;">
+                      <input type="hidden" name="post_id" value="{{ post.id }}">
+                      <input type="hidden" name="team_id" value="{{ team.id }}">
+                      <button type="submit" class="button is-danger is-small" 
+                              onclick="return confirm('정말로 이 게시글을 삭제하시겠습니까?')">
+                        <span class="icon is-small">
+                          <i class="fas fa-trash"></i>
+                        </span>
+                        <span>삭제</span>
+                      </button>
+                    </form>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- 댓글 섹션 -->
+                <div class="mt-4">
+                  <h4 class="title is-6">댓글 <span class="has-text-grey is-size-7">({{ post.comments | length }}개)</span></h4>
+                  
+                  <!-- 기존 댓글들 표시 -->
+                  <div class="comments-list" id="comments-{{ loop.index }}">
+                    {% if post.comments %}
+                      {% for comment in post.comments %}
+                      <div class="comment-item mb-3 p-3 {{ 'ml-4' if comment.get('isReply') else '' }}" 
+                          style="background: {{ '#f0f8ff' if comment.get('isReply') else '#f8f9fa' }}; border-radius: 8px; border-left: 3px solid {{ '#007bff' if comment.get('isReply') else '#00c32e' }};"
+                          id="comment-{{ comment._id }}">
+                        <div class="is-flex is-justify-content-between is-align-items-start">
+                          <div style="flex: 1;">
+                            {% if comment.get('isReply') %}
+                            <p class="has-text-info is-size-7 mb-1">
+                              <i class="fas fa-reply mr-1"></i>대댓글
+                            </p>
+                            {% endif %}
+                            <p class="has-text-weight-semibold is-size-7">{{ comment.author }}</p>
+                            <div class="comment-content mt-1" id="comment-content-{{ comment._id }}">
+                              <p>{{ comment.content }}</p>
+                            </div>
+                            <!-- 수정 폼 (숨김) -->
+                            <div class="comment-edit-form mt-1" id="edit-form-{{ comment._id }}" style="display: none;">
+                              <div class="field has-addons">
+                                <div class="control is-expanded">
+                                  <input class="input is-small" type="text" value="{{ comment.content }}" 
+                                        id="edit-input-{{ comment._id }}">
+                                </div>
+                                <div class="control">
+                                  <button class="button is-success is-small" 
+                                          onclick="saveCommentEdit('{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
+                                    저장
+                                  </button>
+                                </div>
+                                <div class="control">
+                                  <button class="button is-light is-small" 
+                                          onclick="cancelCommentEdit('{{ comment._id }}')">
+                                    취소
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            <!-- 댓글 액션 버튼들 -->
+                            <div class="comment-actions mt-2" style="font-size: 12px;">
+                              {% if not comment.get('isReply') %}
+                              <button class="button is-text is-small" style="padding: 2px 6px; height: auto;" 
+                                      onclick="showReplyForm('{{ comment._id }}')">
+                                <span class="icon is-small">
+                                  <i class="fas fa-reply"></i>
+                                </span>
+                                <span>대댓글</span>
+                              </button>
+                              {% endif %}
+                              
+                              {% if comment.authorId == current_user._id %}
+                              <button class="button is-text is-small" style="padding: 2px 6px; height: auto;" 
+                                      onclick="editComment('{{ comment._id }}')">
+                                <span class="icon is-small">
+                                  <i class="fas fa-edit"></i>
+                                </span>
+                                <span>수정</span>
+                              </button>
+                              {% endif %}
+                              
+                              <!-- 삭제 버튼: 본인이 작성한 댓글이거나 팀 마스터인 경우 표시 -->
+                              {% if comment.authorId == current_user._id or is_master %}
+                              <button class="button is-text has-text-danger is-small" style="padding: 2px 6px; height: auto;" 
+                                      onclick="deleteComment('{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
+                                <span class="icon is-small">
+                                  <i class="fas fa-trash"></i>
+                                </span>
+                                <span>삭제</span>
+                              </button>
+                              {% endif %}
+                            </div>
+                            
+                            <!-- 대댓글 작성 폼 (숨김) -->
+                            {% if not comment.get('isReply') %}
+                            <div class="reply-form mt-2" id="reply-form-{{ comment._id }}" style="display: none;">
+                              <div class="field has-addons">
+                                <div class="control is-expanded">
+                                  <input class="input is-small" type="text" placeholder="대댓글을 입력하세요..." 
+                                        id="reply-input-{{ comment._id }}" 
+                                        onkeypress="handleReplyKeyPress(event, '{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
+                                </div>
+                                <div class="control">
+                                  <button class="button is-primary is-small" 
+                                          onclick="addReply('{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
+                                    <span class="icon is-small">
+                                      <i class="fas fa-paper-plane"></i>
+                                    </span>
+                                  </button>
+                                </div>
+                                <div class="control">
+                                  <button class="button is-light is-small" 
+                                          onclick="hideReplyForm('{{ comment._id }}')">
+                                    취소
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            {% endif %}
+                          </div>
+                          <span class="has-text-grey is-size-7">{{ comment.createdAt.strftime('%m/%d %H:%M') if comment.createdAt else '' }}</span>
+                        </div>
+                      </div>
+                      {% endfor %}
+                    {% else %}
+                      <p class="has-text-grey is-size-7">아직 댓글이 없습니다.</p>
+                    {% endif %}
+                  </div>
+                  
+                  <!-- 댓글 작성 폼 (모든 로그인 사용자) -->
+                  <div class="mt-3">
+                    <div class="field has-addons">
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" placeholder="댓글을 입력하세요..." 
+                              id="comment-input-{{ loop.index }}" 
+                              onkeypress="handleCommentKeyPress(event, '{{ post.title }}', '{{ team.id }}', {{ loop.index }})">
+                      </div>
+                      <div class="control">
+                        <button class="button is-primary is-small" 
+                                onclick="addComment('{{ post.title }}', '{{ team.id }}', {{ loop.index }})">
+                          <span class="icon is-small">
+                            <i class="fas fa-paper-plane"></i>
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </article>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="content-box has-text-centered" style="padding: 40px;">
+          <p class="has-text-grey is-size-5">아직 작성된 글이 없습니다.</p>
+          {% if is_member %}
+          <p class="has-text-grey">첫 번째 글을 작성해보세요!</p>
+          {% else %}
+          <p class="has-text-grey">팀에 가입하여 첫 번째 글을 작성해보세요!</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <script>
+    // WWL 라벨 클릭 처리 함수
+    function handleWWLClick() {
+        if (window.location.pathname === '/main_page') {
+            window.location.reload();
+        } else {
+            window.location.href = '/main_page';
+        }
+    }
+
+    // 팀 좋아요 기능
+    function handleTeamLike(button) {
+      // AJAX 요청으로 서버에 추천 요청 보내기
+      fetch('/team_upvote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `team_id={{ team.id }}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // UI 업데이트
+          const likeCountSpan = document.querySelector('.team-like-count');
+          likeCountSpan.textContent = data.new_upvote_count;
+          
+          // 버튼 비활성화
+          button.disabled = true;
+          button.innerHTML = '<span class="icon"><i class="fas fa-thumbs-up"></i></span><span>추천됨</span>';
+          button.className = 'button is-light is-small';
+        } else {
+          alert(data.error || '추천 처리 중 오류가 발생했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('추천 처리 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 포스트 좋아요 기능
+    function handlePostLike(button, postId) {
+      // AJAX 요청으로 서버에 좋아요 요청 보내기
+      fetch('/post_like', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `team_id={{ team.id }}&post_id=${postId}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // UI 업데이트
+          const likeCountSpan = button.parentElement.querySelector('.post-like-count');
+          likeCountSpan.textContent = data.new_like_count;
+          
+          // 버튼 비활성화 및 스타일 변경
+          button.disabled = true;
+          button.innerHTML = '<span class="icon is-small"><i class="fas fa-heart" style="color: #ff3860;"></i></span><span>좋아요됨</span>';
+          button.className = 'button is-light is-small';
+        } else {
+          alert(data.error || '좋아요 처리 중 오류가 발생했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('좋아요 처리 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 댓글 관련 함수들
+    function handleCommentKeyPress(event, postTitle, teamId, postIndex) {
+      if (event.key === 'Enter') {
+        addComment(postTitle, teamId, postIndex);
+      }
+    }
+
+    function addComment(postTitle, teamId, postIndex) {
+      const input = document.getElementById(`comment-input-${postIndex}`);
+      const content = input.value.trim();
+      
+      if (!content) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      fetch('/add_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          post_title: postTitle,
+          team_id: teamId,
+          comment_content: content
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 👉 성공하면 그냥 새로고침
+          location.reload();
+        } else {
+          alert(data.error || '댓글 추가에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 추가 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 댓글 수정 관련 함수들
+    function editComment(commentId) {
+      // 댓글 내용 숨기고 수정 폼 표시
+      document.getElementById(`comment-content-${commentId}`).style.display = 'none';
+      document.getElementById(`edit-form-${commentId}`).style.display = 'block';
+    }
+
+    function cancelCommentEdit(commentId) {
+      // 수정 폼 숨기고 댓글 내용 표시
+      document.getElementById(`comment-content-${commentId}`).style.display = 'block';
+      document.getElementById(`edit-form-${commentId}`).style.display = 'none';
+    }
+
+    function saveCommentEdit(commentId, postTitle, teamId) {
+      const newContent = document.getElementById(`edit-input-${commentId}`).value.trim();
+      
+      if (!newContent) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      fetch('/edit_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          post_title: postTitle,
+          comment_id: commentId,
+          new_content: newContent
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 👉 성공 시 페이지 새로고침
+          location.reload();
+        } else {
+          alert(data.error || '댓글 수정에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 수정 중 오류가 발생했습니다.');
+      });
+    }
+
+    function deleteComment(commentId, postTitle, teamId) {
+      if (!confirm('정말로 이 댓글을 삭제하시겠습니까?\n(답댓글이 있다면 함께 삭제됩니다)')) {
+        return;
+      }
+
+      fetch('/delete_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          post_title: postTitle,
+          comment_id: commentId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 페이지 새로고침으로 간단하게 처리 (백엔드에서 이미 정확히 처리됨)
+          if (data.message) {
+            alert(data.message);
+          }
+          location.reload();
+        } else {
+          alert(data.error || '댓글 삭제에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 삭제 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 답댓글 관련 함수들
+    function showReplyForm(commentId) {
+      document.getElementById(`reply-form-${commentId}`).style.display = 'block';
+      document.getElementById(`reply-input-${commentId}`).focus();
+    }
+
+    function hideReplyForm(commentId) {
+      document.getElementById(`reply-form-${commentId}`).style.display = 'none';
+      document.getElementById(`reply-input-${commentId}`).value = '';
+    }
+
+    function handleReplyKeyPress(event, commentId, postTitle, teamId) {
+      if (event.key === 'Enter') {
+        addReply(commentId, postTitle, teamId);
+      }
+    }
+
+    function addReply(parentCommentId, postTitle, teamId) {
+      const input = document.getElementById(`reply-input-${parentCommentId}`);
+      const content = input.value.trim();
+      
+      if (!content) {
+        alert('답댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      fetch('/add_reply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          post_title: postTitle,
+          parent_comment_id: parentCommentId,
+          reply_content: content
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 👉 성공하면 그냥 새로고침
+          location.reload();
+        } else {
+          alert(data.error || '답댓글 추가에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('답댓글 추가 중 오류가 발생했습니다.');
+      });
+    }
+  </script>
+</body>
+</html>

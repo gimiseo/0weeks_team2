@@ -1,0 +1,6 @@
+testing.*
+venv
+temp*.py
+temp.html
+static/uploads
+static/profile_imgs
