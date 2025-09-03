@@ -323,6 +323,69 @@ def team_join():
 
     return render_template("team_join.html")
 
+@app.route("/team_join/<team_id>", methods=["GET", "POST"])
+def team_join_specific(team_id):
+    username = get_current_user(request)
+    if not username:
+        return redirect(url_for("login"))
+    
+    # team_id 유효성 검사
+    if not team_id or team_id.strip() == "":
+        return redirect(url_for("main_page"))
+    
+    try:
+        from bson import ObjectId
+        team_object_id = ObjectId(team_id)
+    except:
+        return redirect(url_for("main_page"))
+    
+    # 팀 정보 조회
+    team = db["teams"].find_one({"_id": team_object_id})
+    if not team:
+        return redirect(url_for("main_page"))
+    
+    if request.method == "POST":
+        team_password = request.form["team_password"]
+        
+        # 현재 사용자 정보 조회
+        current_user = users_collection.find_one({"username": username})
+        if not current_user:
+            return redirect(url_for("login"))
+        
+        # 비밀번호 확인
+        if not check_password_hash(team["roomPasswordHash"], team_password):
+            return render_template("team_join_specific.html", 
+                                 team=team, 
+                                 error="비밀번호가 올바르지 않습니다.")
+        
+        # 이미 해당 팀의 멤버인지 확인
+        is_already_member = any(
+            member["userId"] == current_user["_id"] 
+            for member in team["members"]
+        )
+        
+        if is_already_member:
+            return render_template("team_join_specific.html", 
+                                 team=team, 
+                                 error="이미 이 팀의 멤버입니다.")
+        
+        # 새 멤버를 팀에 추가
+        new_member = {
+            "userId": current_user["_id"],
+            "role": "member",
+            "joinedAt": datetime.datetime.utcnow()
+        }
+        
+        db["teams"].update_one(
+            {"_id": team["_id"]},
+            {"$push": {"members": new_member}}
+        )
+        
+        # 성공 시 팀 페이지로 리다이렉트
+        return redirect(url_for("team_page", team_id=team_id))
+    
+    return render_template("team_join_specific.html", team=team)
+
 @app.route("/team_page")
 def team_page_redirect():
     return redirect(url_for("main_page"))

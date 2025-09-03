@@ -1,3 +1,4 @@
 testing.*
 venv
-temp*
+temp*.py
+temp.html
