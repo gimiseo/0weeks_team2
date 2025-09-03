@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>팀 페이지 – WeeklyWeLearned</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <!-- Quill Editor CSS -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <style>
+    body { background:#f6fbf9; }
+    .wwl-label{ font-size:30px; font-weight:700; color:#00c32e; }
+    .avatar-frame{ 
+      width:72px; height:72px; border-radius:50%; 
+      background-size:cover; background-position:center; 
+      border:3px solid #fff; 
+      box-shadow:0 2px 8px rgba(0,0,0,.2); 
+    }
+    .editor-container{
+      height: 400px;
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- 상단 고정 네비게이션 -->
+  <nav class="navbar is-white has-shadow">
+    <div class="navbar-brand">
+      <a class="navbar-item wwl-label">WeeklyWeLearned</a>
+    </div>
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <a href="#mypage" class="button is-primary">마이페이지</a>
+        <span class="ml-3 has-text-weight-semibold" style="cursor:pointer;">로그아웃</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 메인 컨텐츠 -->
+  <section class="section">
+    <div class="container">
+      
+      <!-- 팀 헤더 -->
+      <div class="box">
+        <h1 class="title is-3">1등 팀명</h1>
+        <div class="is-flex is-align-items-center">
+          <div class="avatar-frame mr-3" style="background-image:url('images/member1.png');"></div>
+          <div class="avatar-frame mr-3" style="background-image:url('images/member2.png');"></div>
+          <div class="avatar-frame mr-3" style="background-image:url('images/member3.png');"></div>
+        </div>
+      </div>
+
+      <!-- 팀 정보 -->
+      <div class="box mb-5">
+        <div class="field">
+            <label class="label">첨부파일 업로드</label>
+        <div class="file has-name is-boxed">
+            <label class="file-label">
+                <input class="file-input" type="file" name="team_file" id="teamFile">
+                <span class="file-cta">
+                    <span class="file-icon">
+                        📎
+                    </span>
+                    <span class="file-label">파일 선택</span>
+                </span>
+                <span class="file-name" id="fileName">선택된 파일 없음</span>
+            </label>
+        </div>
+  </div>
+  
+  <p class="mt-3"><strong>깃허브 주소:</strong> <a href="#">https://github.com/team/repo</a></p>
+</div>
+
+      <!-- 글쓰기 에디터 -->
+      <div class="box">
+        <h2 class="title is-4 mb-3">팀 블로그 글쓰기</h2>
+        <div id="editor" class="editor-container"></div>
+        <button class="button is-success mt-3">저장하기</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Quill Editor JS -->
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script>
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, false] }],
+          ['bold', 'italic', 'underline'],
+          ['link', 'image'],
+          [{ list: 'ordered' }, { list: 'bullet' }]
+        ]
+      }
+    });
+    const fileInput = document.querySelector('#teamFile');
+  const fileName = document.querySelector('#fileName');
+  fileInput.addEventListener('change', () => {
+    fileName.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : '선택된 파일 없음';
+  });
+  </script>
+</body>
+</html>
