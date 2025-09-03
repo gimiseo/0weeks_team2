@@ -5,23 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>글 수정 – WeeklyWeLearned</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
   <style>
-    body { background:#f6fbf9; }
-    .editor-container {
-      height: 400px;
-      background: #fff;
+    body { 
+      background:#f6fbf9; 
+      padding-top: 3.25rem; /* navbar 높이만큼 패딩 추가 */
+    }
+    .wwl-label { 
+      font-size:30px; 
+      font-weight:700; 
+      color:#00c32e !important;
+      text-decoration: none;
+    }
+    .wwl-label:hover {
+      color: #00a025 !important;
+    }
+    .logout-text:hover {
+      color: #ff3860 !important;
+    }
+    .note-editor.note-frame {
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
     }
   </style>
 </head>
 <body>
+  <!-- 상단 통합 네비게이션 바 -->
+  <nav class="navbar is-white has-shadow is-fixed-top" style="z-index: 2000;">
+    <div class="navbar-brand">
+      <a class="navbar-item wwl-label" href="/main_page" style="cursor: pointer;">WeeklyWeLearned</a>
+    </div>
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <div class="is-flex is-align-items-center">
+          <!-- 프로필 이미지와 닉네임 -->
+          <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
+            <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
+            <span class="has-text-weight-semibold">{{ current_user.nickname }}</span>
+          </div>
+          <span class="logout-text" onclick="window.location.href='/logout'" style="cursor: pointer; font-weight: 600; color: #363636;">로그아웃</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
   <section class="section">
     <div class="container">
       <h1 class="title is-3">글 수정</h1>
-      <form method="POST" action="/update_post">
+      <form method="POST" action="/edit_post?team={{ team.teamName }}&week={{ team.week }}">
         <input type="hidden" name="old_title" value="{{ post.title }}">
+        <input type="hidden" name="team_name" value="{{ team.teamName }}">
+        <input type="hidden" name="week" value="{{ team.week }}">
         <div class="field">
           <label class="label">제목</label>
           <div class="control">
@@ -30,8 +64,7 @@
         </div>
         <div class="field">
           <label class="label">내용</label>
-          <div id="editor" class="editor-container">{{ post.content | safe }}</div>
-          <textarea name="content" id="content" style="display:none;"></textarea>
+          <textarea id="editor" name="content">{{ post.content }}</textarea>
         </div>
         <div class="control">
           <button class="button is-success" type="submit">수정하기</button>
@@ -39,23 +72,45 @@
       </form>
     </div>
   </section>
-  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
   <script>
-    const quill = new Quill('#editor', {
-      theme: 'snow',
-      modules: {
+    $(document).ready(function() {
+      $('#editor').summernote({
+        height: 400,
         toolbar: [
-          [{ header: [1, 2, false] }],
-          ['bold', 'italic', 'underline'],
-          ['link', 'image'],
-          [{ list: 'ordered' }, { list: 'bullet' }]
-        ]
-      }
-    });
+          ['style', ['bold', 'italic', 'underline', 'clear']],
+          ['font', ['strikethrough', 'superscript', 'subscript']],
+          ['fontsize', ['fontsize']],
+          ['color', ['color']],
+          ['para', ['ul', 'ol', 'paragraph']],
+          ['height', ['height']],
+          ['insert', ['link', 'picture', 'video']],
+          ['view', ['fullscreen', 'codeview', 'help']]
+        ],
+        callbacks: {
+          onImageUpload: function(files) {
+            const formData = new FormData();
+            formData.append('image', files[0]);
 
-    // 에디터 내용 폼에 저장
-    document.querySelector('form').addEventListener('submit', function() {
-      document.querySelector('#content').value = quill.root.innerHTML;
+            // 서버에 이미지 업로드 요청
+            $.ajax({
+              url: '/upload_image',
+              method: 'POST',
+              data: formData,
+              contentType: false,
+              processData: false,
+              success: function(data) {
+                // 업로드된 이미지 URL을 에디터에 삽입
+                $('#editor').summernote('insertImage', data.url);
+              },
+              error: function() {
+                alert('이미지 업로드에 실패했습니다.');
+              }
+            });
+          }
+        }
+      });
     });
   </script>
 </body>

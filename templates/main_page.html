@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weekly We Learned</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="/static/main_page.css">
+</head>
+<body>
+    <!-- 상단 통합 네비게이션 바 -->
+    <nav class="navbar is-white has-shadow is-fixed-top" style="z-index: 2000;">
+        <div class="navbar-brand">
+            <a class="navbar-item wwl-label" onclick="handleWWLClick()" style="cursor: pointer;">WeeklyWeLearned</a>
+        </div>
+        <div class="navbar-end">
+            <div class="navbar-item">
+                <div class="is-flex is-align-items-center">
+                    <!-- 프로필 이미지와 닉네임 -->
+                    <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
+                        <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
+                        <span class="has-text-weight-semibold" style="color: #363636;">{{ current_user.nickname }}</span>
+                    </div>
+                    <span class="logout-text" onclick="window.location.href='/logout'" style="cursor: pointer; font-weight: 600; color: #363636;">로그아웃</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-wrap container is-fluid">
+        <!-- columns 를 정확히 반씩(is-6/is-6) + is-vcentered 로 세로 중앙 -->
+        <div class="columns is-variable is-6 is-vcentered split-row">
+            
+            <!-- 좌측 50% : 캐러셀 (가운데 정렬) -->
+            <div class="column is-6">
+                <div class="half-center">
+                    <div class="panel-inner">
+                        <div class="stage-viewport">
+                            <div class="stage" id="stage" aria-live="polite">
+                                <!-- week0 ~ week20 -->
+                                {% for week_data in weeks_data %}
+                                <article class="item card-{{ week_data.week }}" data-week="{{ week_data.week }}">
+                                    <div class="demo-card{% if week_data.color == 'blue' %} blue{% elif week_data.color == 'gray' %} gray{% endif %}">
+                                        week{{ week_data.week }}
+                                    </div>
+                                </article>
+                                {% endfor %}
+                            </div>
+                            <button class="button is-dark is-light nav-btn" id="prev" aria-label="이전(위)">▲</button>
+                            <button class="button is-dark is-light nav-btn" id="next" aria-label="다음(아래)">▼</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 우측 50% : 팀 리스트 (가운데 정렬) -->
+            <div class="column is-6 team-column">
+                <div class="half-center">
+                    <div class="panel-inner team-stack" id="team-section">
+                        <div class="team-list-header mb-4">
+                            <div class="is-flex is-align-items-center is-justify-content-space-between">
+                                <h3 class="title is-4 has-text-centered">
+                                    Week {{ selected_week }} 팀 목록
+                                </h3>
+                                <div class="buttons">
+                                    <button class="button is-danger" onclick="deleteAllTeams()">
+                                        <span class="icon">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </span>
+                                        <span>모든 팀 삭제</span>
+                                    </button>
+                                    <button class="button is-warning" onclick="createTestTeams()">
+                                        <span class="icon">
+                                            <i class="fas fa-magic"></i>
+                                        </span>
+                                        <span>테스트 팀 생성</span>
+                                    </button>
+                                    <button class="button is-primary" onclick="createTeam({{ selected_week }})">
+                                        <span class="icon">
+                                            <i class="fas fa-plus"></i>
+                                        </span>
+                                        <span>팀 생성</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="team-list-container">
+                            {% for team in selected_teams %}
+                            <div class="notification is-success mb-4 team-card" onclick="goToTeamPage('{{ team.teamName }}', {{ team.week }})">
+                                <div class="team-info">
+                                    <div class="is-flex is-align-items-center is-justify-content-space-between">
+                                        <div class="team-details">
+                                            <div class="has-text-weight-semibold team-name">{{ team.teamName }}</div>
+                                            <div class="is-size-7 has-text-grey team-meta">
+                                                멤버 {{ team.member_count }}명 · 추천 {{ team.upvote }}개
+                                            </div>
+                                        </div>
+                                        <div class="team-members is-flex is-align-items-center">
+                                            {% for member in team.members[:3] %}
+                                            <div class="avatar-frame mr-2" 
+                                                 title="{{ member.nickname }} ({{ member.role }})"
+                                                 style="background-image: url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}');">
+                                            </div>
+                                            {% endfor %}
+                                            {% if team.member_count > 3 %}
+                                            <div class="avatar-frame more-members">
+                                                +{{ team.member_count - 3 }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.currentWeek = {{ current_week | default(0) }};
+        window.selectedWeek = {{ selected_week | default(0) }};
+
+        // WWL 라벨 클릭 처리 함수
+        function handleWWLClick() {
+            // 현재 페이지가 main_page인지 확인
+            if (window.location.pathname === '/main_page') {
+                // main_page에 있으면 새로고침
+                window.location.reload();
+            } else {
+                // 다른 페이지에 있으면 main_page로 이동
+                window.location.href = '/main_page';
+            }
+        }
+
+        // 팀 생성 함수
+        function createTeam(week) {
+            window.location.href = '/team_signup?week=' + week;
+        }
+
+        // 팀페이지로 이동 함수
+        function goToTeamPage(teamName, week) {
+            // 팀 이름과 주차를 URL 파라미터로 전달
+            window.location.href = '/teampage?team=' + encodeURIComponent(teamName) + '&week=' + week;
+        }
+
+        // 테스트 팀 생성 함수
+        function createTestTeams() {
+            if (confirm('0주차부터 20주차까지 모든 주차에 테스트 팀을 생성하시겠습니까?\n\n팀장: 현재 로그인한 사용자\n비밀번호: 4')) {
+                fetch('/create_test_teams', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let memberInfo = `팀장: ${data.leader}`;
+                        alert(data.message + '\n\n' + memberInfo + '\n\n생성된 팀:\n' + data.created_teams.join('\n'));
+                        // 페이지 새로고침하여 새로 생성된 팀들을 표시
+                        window.location.reload();
+                    } else {
+                        alert('오류: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('팀 생성 중 오류가 발생했습니다: ' + error);
+                });
+            }
+        }
+
+        // 모든 팀 삭제 함수
+        function deleteAllTeams() {
+            if (confirm('정말로 모든 팀을 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다!\n- 모든 팀의 게시글과 이미지가 함께 삭제됩니다.')) {
+                fetch('/delete_all_teams', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message + '\n\n삭제된 이미지: ' + data.deleted_images + '개');
+                        // 페이지 새로고침하여 변경사항 반영
+                        window.location.reload();
+                    } else {
+                        alert('오류: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('팀 삭제 중 오류가 발생했습니다: ' + error);
+                });
+            }
+        }
+    </script>
+    <script src="/static/main_page.js"></script>
+</body>
+</html>

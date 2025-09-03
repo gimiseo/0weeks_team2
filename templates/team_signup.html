@@ -1,0 +1,51 @@
+{% extends "user_input_base.html" %}
+{% block title %}팀 생성{% endblock %}
+{% block body_class %}with-navbar{% endblock %}
+{% block navbar %}
+<nav class="navbar is-white has-shadow is-fixed-top" style="z-index: 2000;">
+    <div class="navbar-brand">
+        <a class="navbar-item wwl-label" href="/main_page" style="cursor: pointer;">WeeklyWeLearned</a>
+    </div>
+    <div class="navbar-end">
+        <div class="navbar-item">
+            <div class="is-flex is-align-items-center">
+                <!-- 프로필 이미지와 닉네임 -->
+                <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
+                    <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
+                    <span class="has-text-weight-semibold">{{ current_user.nickname }}</span>
+                </div>
+                <span class="logout-text" onclick="window.location.href='/logout'" style="cursor: pointer; font-weight: 600; color: #363636;">로그아웃</span>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="container">
+    
+    <div class = "sign-up-head">
+      <a href="/main_page" class="link-btn" >← 뒤로가기</a> 
+      <h2 class="title">팀 생성</h2>
+    </div>
+    
+    <form method="post" class="form-box">
+        <div class="form-box">  
+        <span>주차</span>
+        {% if default_week is not none %}
+        <input type="number" name="week" value="{{ default_week }}" readonly required>
+        {% else %}
+        <select name="week" required>
+        {% for i in range(0, 21) %}
+        <option value="{{ i }}">{{ i }} week</option>
+        {% endfor %}
+        </select>
+        {% endif %}
+        </div>
+        <input type="text" name="team_name" placeholder="팀 이름" required><br>
+        <input type="password" name="team_password" placeholder="팀 비밀번호" required><br>
+        <button type="submit" class="btn">확인</button>
+    </form>
+
+  
+</div>
+{% endblock %}

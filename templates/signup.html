@@ -1,14 +1,14 @@
-{% extends "base.html" %}
+{% extends "user_input_base.html" %}
 {% block title %}회원가입{% endblock %}
+{% block body_class %}{% endblock %}
 {% block content %}
 <div class="container">
-    
-    <div class = "sign-up-head">
-      <a href="{{ url_for('login') }}" class="link-btn" >← 뒤로가기</a> 
-      <h2 class="title">회원가입</h2>
+    <div class="sign-up-head">
+        <a href="{{ url_for('login') }}" class="link-btn">← 뒤로가기</a> 
+        <h2 class="title">회원가입</h2>
     </div>
     
-    <form method="post" class="form-box">
+    <form method="post" class="form-box" enctype="multipart/form-data">
         <input type="text" name="username" placeholder="아이디" required><br>
         <input type="password" name="password" placeholder="비밀번호" required><br>
         <input type="password" name="confirm_password" placeholder="비밀번호 확인" required><br>
@@ -19,6 +19,5 @@
         
         <button type="submit" class="btn">등록하기</button>
     </form>
-
 </div>
 {% endblock %}

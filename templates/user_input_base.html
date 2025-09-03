@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='user_input.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rock+3D&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@100..900&family=Rock+3D&display=swap" rel="stylesheet">
+    <style>
+        .wwl-label { 
+            font-size:30px; 
+            font-weight:700; 
+            color:#00c32e !important;
+            text-decoration: none;
+        }
+        .wwl-label:hover {
+            color: #00a025 !important;
+        }
+        .logout-text:hover {
+            color: #ff3860 !important;
+        }
+    </style>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {% block navbar %}{% endblock %}
+    {% block content %}{% endblock %}
+</body>
+</html>

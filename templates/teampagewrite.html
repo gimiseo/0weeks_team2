@@ -7,8 +7,22 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
   <style>
-    body { background:#f6fbf9; }
-    .wwl-label{ font-size:30px; font-weight:700; color:#00c32e; }
+    body { 
+      background:#f6fbf9; 
+      padding-top: 3.25rem; /* navbar 높이만큼 패딩 추가 */
+    }
+    .wwl-label{ 
+      font-size:30px; 
+      font-weight:700; 
+      color:#00c32e !important;
+      text-decoration: none;
+    }
+    .wwl-label:hover {
+      color: #00a025 !important;
+    }
+    .logout-text:hover {
+      color: #ff3860 !important;
+    }
     .avatar-frame{ 
       width:72px; height:72px; border-radius:50%; 
       background-size:cover; background-position:center; 
@@ -22,15 +36,21 @@
   </style>
 </head>
 <body>
-  <!-- 상단 고정 네비게이션 -->
-  <nav class="navbar is-white has-shadow">
+  <!-- 상단 통합 네비게이션 바 -->
+  <nav class="navbar is-white has-shadow is-fixed-top" style="z-index: 2000;">
     <div class="navbar-brand">
-      <a class="navbar-item wwl-label" style="color:#00c32e;">WeeklyWeLearned</a>
+      <a class="navbar-item wwl-label" href="/main_page" style="cursor: pointer;">WeeklyWeLearned</a>
     </div>
     <div class="navbar-end">
       <div class="navbar-item">
-        <a href="#mypage" class="button is-primary">마이페이지</a>
-        <span class="ml-3 has-text-weight-semibold" style="cursor:pointer;">로그아웃</span>
+        <div class="is-flex is-align-items-center">
+          <!-- 프로필 이미지와 닉네임 -->
+          <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
+            <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
+            <span class="has-text-weight-semibold">{{ current_user.nickname }}</span>
+          </div>
+          <span class="logout-text" onclick="window.location.href='/logout'" style="cursor: pointer; font-weight: 600; color: #363636;">로그아웃</span>
+        </div>
       </div>
     </div>
   </nav>
@@ -41,11 +61,17 @@
       
       <!-- 팀 헤더 -->
       <div class="box">
-        <h1 class="title is-3">1등 팀명</h1>
-        <div class="is-flex is-align-items-center">
-          <div class="avatar-frame mr-3" style="background-image:url('images/member1.png');"></div>
-          <div class="avatar-frame mr-3" style="background-image:url('images/member2.png');"></div>
-          <div class="avatar-frame mr-3" style="background-image:url('images/member3.png');"></div>
+        <h1 class="title is-3">{{ team.teamName }}</h1>
+        <p class="subtitle is-5 has-text-grey">{{ team.description }}</p>
+        <div class="is-flex is-align-items-center" style="flex-wrap: wrap; gap: 16px;">
+          {% for member in team.members[:3] %}
+          <div class="avatar-frame mr-3" 
+               style="background-image:url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}');">
+          </div>
+          {% endfor %}
+          {% if team.members|length > 3 %}
+          <span class="has-text-grey">외 {{ team.members|length - 3 }}명</span>
+          {% endif %}
         </div>
       </div>
 
@@ -73,11 +99,11 @@
       <!-- 글쓰기 에디터 -->
       <div class="box">
         <h2 class="title is-4 mb-3">팀 블로그 글쓰기</h2>
-        <form method="POST" action="/teampagewrite" enctype="multipart/form-data">
+        <form method="POST" action="/teampagewrite?team={{ team.teamName }}&week={{ team.week }}" enctype="multipart/form-data">
           <div class="field">
             <label class="label">작성자</label>
             <div class="control">
-              <input class="input" type="text" name="author" placeholder="작성자 이름을 입력하세요" required>
+              <input class="input" type="text" name="author" value="{{ current_user.nickname }}" readonly>
             </div>
           </div>
           <div class="field">
