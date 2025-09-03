@@ -1586,23 +1586,34 @@ def delete_comment():
     if not team:
         return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
     
+    # 현재 사용자가 팀 마스터인지 확인
+    is_master = any(
+        member["userId"] == current_user["_id"] and member["role"] == "master"
+        for member in team.get("members", [])
+    )
+    
     for post in team.get("posts", []):
         if post.get("title") == post_title:
             comments = post.get("comments", [])
             
             comment_to_delete = None
             for comment in comments:
-                if str(comment.get("_id")) == comment_id and (comment.get("authorId") == current_user["_id"]):
-                    comment_to_delete = comment
-                    break
+                if str(comment.get("_id")) == comment_id:
+                    # 권한 확인: 본인이 작성한 댓글이거나 팀 마스터인 경우
+                    if comment.get("authorId") == current_user["_id"] or is_master:
+                        comment_to_delete = comment
+                        break
             
             if not comment_to_delete:
                 return jsonify({"error": "댓글을 찾을 수 없거나 삭제 권한이 없습니다."}), 404
             
+            # 댓글과 해당 댓글의 모든 대댓글 삭제
             new_comments = []
             for comment in comments:
+                # 삭제할 댓글 자체 제외
                 if str(comment.get("_id")) == comment_id:
                     continue
+                # 삭제할 댓글의 대댓글들도 제외
                 if comment.get("isReply", False) and str(comment.get("parentCommentId")) == comment_id:
                     continue
                 new_comments.append(comment)

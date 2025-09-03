@@ -312,7 +312,6 @@
                                 </div>
                               </div>
                             </div>
-                            
                             <!-- 댓글 액션 버튼들 -->
                             <div class="comment-actions mt-2" style="font-size: 12px;">
                               {% if not comment.get('isReply') %}
@@ -333,6 +332,10 @@
                                 </span>
                                 <span>수정</span>
                               </button>
+                              {% endif %}
+                              
+                              <!-- 삭제 버튼: 본인이 작성한 댓글이거나 팀 마스터인 경우 표시 -->
+                              {% if comment.authorId == current_user._id or is_master %}
                               <button class="button is-text has-text-danger is-small" style="padding: 2px 6px; height: auto;" 
                                       onclick="deleteComment('{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
                                 <span class="icon is-small">
