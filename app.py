@@ -598,9 +598,17 @@ def team_page(team_id):
     current_user = users_collection.find_one({"username": username})
     is_member = any(member["userId"] == current_user["_id"] for member in team.get("members", []))
     
+    # Check if current user is team master
+    is_team_master = any(
+        member["userId"] == current_user["_id"] and member["role"] == "master"
+        for member in team.get("members", [])
+    )
+    
     # Process posts to include post IDs
     posts_with_ids = []
     for post in team.get("posts", []):
+        is_post_author = post.get("authorId") == current_user["_id"]
+        
         post_data = {
             "id": str(post.get("_id", "")),  # Convert ObjectId to string, empty if no _id
             "title": post.get("title", ""),
@@ -609,7 +617,10 @@ def team_page(team_id):
             "authorId": post.get("authorId"),
             "createdAt": post.get("createdAt"),
             "updatedAt": post.get("updatedAt"),
-            "likes": post.get("likes", 0)
+            "likes": post.get("likes", 0),
+            
+            "can_edit": is_post_author,
+            "can_delete": is_post_author or is_team_master
         }
         posts_with_ids.append(post_data)
 

@@ -137,27 +137,60 @@
       
       <!-- 작성된 글 표시 -->
       {% if team.posts %}
+        <!-- Clean template using permission flags from backend -->
         {% for post in team.posts %}
-        <div class="content-box" style="position: relative;">
-          {% if post.image_url %}
-          <figure>
-            <img src="{{ post.image_url }}" alt="Uploaded Image">
-          </figure>
-          {% endif %}
-          <h2 class="title is-4">
-            {{ post.title }}
-            <span class="has-text-grey is-size-6 ml-3">- {{ post.author }}</span>
-          </h2>
-          <p>{{ post.content | safe }}</p>
+        <div class="box" style="position: relative;">
+          <article class="media">
+            <div class="media-content">
+            <div class="content">
+                <div class="mb-3">
+                <div class="mb-2">
+                    <span class="title is-4">{{ post.title }}</span>
+                    <span class="title is-6 has-text-grey-light mx-2">-</span>
+                    <span class="has-text-weight-semibold is-size-6">{{ post.author }}</span>
+                </div>
+                <div>
+                    <span class="has-text-grey is-size-6">{{ post.createdAt.strftime('%Y-%m-%d %H:%M') if post.createdAt else '' }}</span>
+                </div>
+                </div>
+                <div>
+                {{ post.content | safe }}
+                </div>
+            </div>
+            </div>
+        </article>
+
           
-          {% if is_member %}
-          <div class="buttons" style="position: absolute; top: 10px; right: 10px;">
-            <form method="POST" action="/delete_post" style="display: inline;">
-              <input type="hidden" name="post_id" value="{{ post.id }}">
-              <input type="hidden" name="team_id" value="{{ team.id }}">
-              <button class="button is-danger is-light is-small" type="submit">삭제</button>
-            </form>
-            <a href="/edit_post?post_id={{ post.id }}&team_id={{ team.id }}" class="button is-info is-light is-small">수정</a>
+          <!-- Action buttons positioned at top-right corner -->
+          {% if post.can_edit or post.can_delete %}
+          <div style="position: absolute; top: 15px; right: 15px; z-index: 10;">
+            <div class="buttons">
+              <!-- Edit button - only show if user can edit -->
+              {% if post.can_edit %}
+              <a href="/edit_post?post_id={{ post.id }}&team_id={{ team.id }}" 
+                class="button is-info is-small">
+                <span class="icon is-small">
+                  <i class="fas fa-edit"></i>
+                </span>
+                <span>수정</span>
+              </a>
+              {% endif %}
+              
+              <!-- Delete button - only show if user can delete -->
+              {% if post.can_delete %}
+              <form method="POST" action="/delete_post" style="display: inline;">
+                <input type="hidden" name="post_id" value="{{ post.id }}">
+                <input type="hidden" name="team_id" value="{{ team.id }}">
+                <button type="submit" class="button is-danger is-small" 
+                        onclick="return confirm('정말로 이 게시글을 삭제하시겠습니까?')">
+                  <span class="icon is-small">
+                    <i class="fas fa-trash"></i>
+                  </span>
+                  <span>삭제</span>
+                </button>
+              </form>
+              {% endif %}
+            </div>
           </div>
           {% endif %}
         </div>

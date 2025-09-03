@@ -2,3 +2,4 @@ testing.*
 venv
 temp*.py
 temp.html
+static/uploads
