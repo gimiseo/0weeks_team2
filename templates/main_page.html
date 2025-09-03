@@ -19,10 +19,27 @@
             <div class="is-flex is-align-items-center">
             <!-- 알림 아이콘 -->
             <div class="mr-3" style="position: relative;">
-                <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
+              <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
                 <i class="fas fa-bell"></i>
-                </span>
-                <span id="notification-badge" class="tag is-danger is-small" style="position: absolute; top: -5px; right: -5px; display: none; min-width: 20px; height: 20px; font-size: 12px; line-height: 1;">0</span>
+              </span>
+              <span id="notification-badge" class="tag is-danger is-small notification-badge">0</span>
+              
+              <!-- 알림 드롭다운 -->
+              <div id="notification-dropdown" class="notification-dropdown">
+                <div class="notification-header">
+                  <h3 class="title is-6 mb-0">알림</h3>
+                  <div>
+                    <button class="button is-small is-text" onclick="markAllAsRead()">모두 읽음</button>
+                    <button class="button is-small is-text has-text-danger" onclick="clearAllNotifications()">모두 삭제</button>
+                  </div>
+                </div>
+                <div id="notification-list">
+                  <div class="notification-empty">
+                    <i class="fas fa-bell-slash has-text-grey-light"></i>
+                    <p>알림이 없습니다</p>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <!-- 프로필 이미지와 닉네임 -->
@@ -140,5 +157,6 @@
         }
     </script>
     <script src="/static/main_page.js"></script>
+    <script src="/static/alarm.js"></script>
 </body>
 </html>

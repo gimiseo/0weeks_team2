@@ -1522,7 +1522,7 @@ def add_comment():
     if not team:
         return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
     
-    # 게시글 작성자 찾기
+    # 게시글 작성자 찾기 (알림을 위해)
     post_author = None
     for post in team.get("posts", []):
         if post.get("title") == post_title:
@@ -1545,7 +1545,7 @@ def add_comment():
         {"$push": {"posts.$.comments": new_comment}}
     )
     
-    # 알림 생성 (자신 글이 아닐 때)
+    # 댓글 추가 성공시 알림 생성 (자신의 글이 아닌 경우만)
     if result.modified_count > 0 and post_author and post_author["_id"] != current_user["_id"]:
         notification = {
             "userId": post_author["_id"],
@@ -1554,6 +1554,7 @@ def add_comment():
             "message": f'"{post_title}" 글에 새 댓글이 있습니다: "{comment_content[:50]}{"..." if len(comment_content) > 50 else ""}"',
             "postTitle": post_title,
             "teamId": ObjectId(team_id),
+            "teamName": team["teamName"],
             "commentAuthor": current_user["nickname"],
             "commentAuthorId": current_user["_id"],
             "commentContent": comment_content,
@@ -1716,6 +1717,16 @@ def add_reply():
     if not team:
         return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
 
+    # 부모 댓글 작성자 찾기 (알림을 위해)
+    parent_comment_author = None
+    for post in team.get("posts", []):
+        if post.get("title") == post_title:
+            for comment in post.get("comments", []):
+                if str(comment.get("_id")) == parent_comment_id:
+                    parent_comment_author = users_collection.find_one({"_id": comment.get("authorId")})
+                    break
+            break
+
     new_reply = {
         "_id": ObjectId(),
         "content": reply_content,
@@ -1731,6 +1742,25 @@ def add_reply():
         {"$push": {"posts.$.comments": new_reply}}
     )
 
+    # 답댓글 추가 성공시 알림 생성 (자신의 댓글이 아닌 경우만)
+    if result.modified_count > 0 and parent_comment_author and parent_comment_author["_id"] != current_user["_id"]:
+        notification = {
+            "userId": parent_comment_author["_id"],
+            "type": "reply",
+            "title": f"{current_user['nickname']}님이 답댓글을 달았습니다",
+            "message": f'"{post_title}" 글의 댓글에 답댓글이 있습니다: "{reply_content[:50]}{"..." if len(reply_content) > 50 else ""}"',
+            "postTitle": post_title,
+            "teamId": ObjectId(team_id),
+            "teamName": team["teamName"],
+            "replyAuthor": current_user["nickname"],
+            "replyAuthorId": current_user["_id"],
+            "replyContent": reply_content,
+            "parentCommentId": parent_comment_id,
+            "isRead": False,
+            "createdAt": datetime.datetime.utcnow() + datetime.timedelta(hours=9)
+        }
+        db["notifications"].insert_one(notification)
+
     if result.modified_count > 0:
         return jsonify({
             "success": True,
@@ -1744,6 +1774,204 @@ def add_reply():
         })
     else:
         return jsonify({"error": "답댓글 추가에 실패했습니다."}), 500
+
+@app.route("/api/notifications")
+def api_notifications():
+    """알림 목록과 읽지 않은 개수를 함께 반환 (HTML과 일치)"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    # 알림 목록 조회
+    notifications = list(db["notifications"].find(
+        {"userId": current_user["_id"]}
+    ).sort([("isRead", 1), ("createdAt", -1)]).limit(20))
+    
+    # 읽지 않은 알림 개수
+    unread_count = db["notifications"].count_documents({
+        "userId": current_user["_id"],
+        "isRead": False
+    })
+    
+    # 직렬화
+    serialized_notifications = []
+    for notification in notifications:
+        serialized_notifications.append({
+            "_id": str(notification["_id"]),
+            "userId": str(notification["userId"]),
+            "type": notification.get("type", ""),
+            "title": notification.get("title", ""),
+            "message": notification.get("message", ""),
+            "postTitle": notification.get("postTitle", ""),
+            "teamId": str(notification.get("teamId", "")),
+            "teamName": notification.get("teamName", ""),
+            "isRead": notification.get("isRead", False),
+            "createdAt": notification["createdAt"].strftime("%Y-%m-%d %H:%M:%S") if notification.get("createdAt") else ""
+        })
+    
+    return jsonify({
+        "notifications": serialized_notifications,
+        "unread_count": unread_count
+    })
+
+@app.route("/api/notifications/mark_read", methods=["POST"])
+def api_mark_notifications_read():
+    """알림 읽음 처리 (HTML과 일치)"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    data = request.get_json()
+    notification_ids = data.get("notification_ids", [])
+    
+    if notification_ids:
+        # 특정 알림들 읽음 처리
+        object_ids = [ObjectId(nid) for nid in notification_ids]
+        result = db["notifications"].update_many(
+            {"_id": {"$in": object_ids}, "userId": current_user["_id"]},
+            {"$set": {"isRead": True}}
+        )
+    else:
+        # 모든 알림 읽음 처리
+        result = db["notifications"].update_many(
+            {"userId": current_user["_id"], "isRead": False},
+            {"$set": {"isRead": True}}
+        )
+    
+    return jsonify({"success": True, "marked_count": result.modified_count})
+
+@app.route("/api/notifications/delete", methods=["POST"])
+def api_delete_notifications():
+    """알림 삭제 (HTML과 일치)"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    data = request.get_json()
+    notification_ids = data.get("notification_ids", [])
+    
+    if notification_ids:
+        # 특정 알림들 삭제
+        object_ids = [ObjectId(nid) for nid in notification_ids]
+        result = db["notifications"].delete_many(
+            {"_id": {"$in": object_ids}, "userId": current_user["_id"]}
+        )
+    else:
+        # 모든 알림 삭제
+        result = db["notifications"].delete_many(
+            {"userId": current_user["_id"]}
+        )
+    
+    return jsonify({"success": True, "deleted_count": result.deleted_count})
+@app.route("/mark_notification_read", methods=["POST"])
+def mark_notification_read():
+    """알림을 읽음으로 표시"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    data = request.get_json()
+    notification_id = data.get("notification_id")
+    
+    if not notification_id:
+        return jsonify({"error": "알림 ID가 필요합니다."}), 400
+    
+    try:
+        result = db["notifications"].update_one(
+            {"_id": ObjectId(notification_id), "userId": current_user["_id"]},
+            {"$set": {"isRead": True}}
+        )
+        
+        if result.modified_count > 0:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"error": "알림을 찾을 수 없습니다."}), 404
+    except Exception as e:
+        return jsonify({"error": f"잘못된 알림 ID입니다: {str(e)}"}), 400
+
+@app.route("/get_unread_count")
+def get_unread_count():
+    """읽지 않은 알림 개수 조회"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"count": 0})
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"count": 0})
+    
+    count = db["notifications"].count_documents({
+        "userId": current_user["_id"],
+        "isRead": False
+    })
+    
+    return jsonify({"count": count})
+
+@app.route("/mark_all_notifications_read", methods=["POST"])
+def mark_all_notifications_read():
+    """모든 알림을 읽음으로 표시"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    result = db["notifications"].update_many(
+        {"userId": current_user["_id"], "isRead": False},
+        {"$set": {"isRead": True}}
+    )
+    
+    return jsonify({
+        "success": True,
+        "marked_count": result.modified_count
+    })
+
+@app.route("/delete_notification", methods=["POST"])
+def delete_notification():
+    """특정 알림 삭제"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    data = request.get_json()
+    notification_id = data.get("notification_id")
+    
+    if not notification_id:
+        return jsonify({"error": "알림 ID가 필요합니다."}), 400
+    
+    try:
+        result = db["notifications"].delete_one(
+            {"_id": ObjectId(notification_id), "userId": current_user["_id"]}
+        )
+        
+        if result.deleted_count > 0:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"error": "알림을 찾을 수 없습니다."}), 404
+    except Exception as e:
+        return jsonify({"error": f"잘못된 알림 ID입니다: {str(e)}"}), 400
 
 if __name__ == "__main__":
     app.run(debug=True)

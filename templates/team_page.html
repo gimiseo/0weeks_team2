@@ -6,6 +6,7 @@
   <title>WWL</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="/static/alarm.js"></script>
   <style>
     body { background:#f6fbf9; }
     
@@ -97,6 +98,72 @@
       transform: translateY(-1px);
       box-shadow: 0 4px 8px rgba(255, 56, 96, 0.3);
     }
+
+    /* 알림 드롭다운 스타일 */
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #dbdbdb;
+      border-radius: 8px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      width: 350px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 3000;
+      display: none;
+    }
+    
+    .notification-dropdown.is-active {
+      display: block;
+    }
+    
+    .notification-item {
+      padding: 15px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .notification-item:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .notification-item.is-unread {
+      background-color: #e8f4fd;
+      border-left: 4px solid #3273dc;
+    }
+    
+    .notification-header {
+      padding: 15px;
+      border-bottom: 2px solid #f5f5f5;
+      background-color: #fafafa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .notification-empty {
+      padding: 30px;
+      text-align: center;
+      color: #999;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      display: none;
+      min-width: 20px;
+      height: 20px;
+      font-size: 12px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -110,10 +177,27 @@
             <div class="is-flex is-align-items-center">
             <!-- 알림 아이콘 -->
             <div class="mr-3" style="position: relative;">
-                <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
+              <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
                 <i class="fas fa-bell"></i>
-                </span>
-                <span id="notification-badge" class="tag is-danger is-small" style="position: absolute; top: -5px; right: -5px; display: none; min-width: 20px; height: 20px; font-size: 12px; line-height: 1;">0</span>
+              </span>
+              <span id="notification-badge" class="tag is-danger is-small notification-badge">0</span>
+              
+              <!-- 알림 드롭다운 -->
+              <div id="notification-dropdown" class="notification-dropdown">
+                <div class="notification-header">
+                  <h3 class="title is-6 mb-0">알림</h3>
+                  <div>
+                    <button class="button is-small is-text" onclick="markAllAsRead()">모두 읽음</button>
+                    <button class="button is-small is-text has-text-danger" onclick="clearAllNotifications()">모두 삭제</button>
+                  </div>
+                </div>
+                <div id="notification-list">
+                  <div class="notification-empty">
+                    <i class="fas fa-bell-slash has-text-grey-light"></i>
+                    <p>알림이 없습니다</p>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <!-- 프로필 이미지와 닉네임 -->
