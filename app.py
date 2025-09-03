@@ -612,6 +612,21 @@ def team_page(team_id):
         for member in team.get("members", [])
     )
     
+    # 현재 사용자가 이미 추천했는지 확인
+    has_upvoted = current_user["_id"] in team.get("upvotedUsers", [])
+    
+    # 각 글에 대해 현재 사용자가 좋아요했는지 확인하고 댓글 정렬
+    posts_with_like_status = []
+    # for post in team.get("posts", []):
+    #     post_copy = post.copy()
+    #     post_copy["has_liked"] = current_user["_id"] in post.get("likedUsers", [])
+        
+    #     # 댓글을 부모-자식 관계에 따라 정렬
+    #     sorted_comments = sort_comments_by_hierarchy(post.get("comments", []))
+    #     post_copy["comments"] = sorted_comments
+        
+    #     posts_with_like_status.append(post_copy)
+    
     # Process posts to include post IDs
     posts_with_ids = []
     for post in team.get("posts", []):
@@ -639,6 +654,7 @@ def team_page(team_id):
         "description": team.get("description", ""),
         "week": team["week"],
         "upvote": team.get("upvote", 0),
+        "has_upvoted": has_upvoted,
         "members": team_members,
         "member_count": len(team_members),
         "posts": posts_with_ids
@@ -648,6 +664,60 @@ def team_page(team_id):
                            team=team_data,
                            is_member=is_member,
                            current_user=current_user_data)
+
+@app.route("/team_upvote", methods=["POST"])
+def team_upvote():
+    """팀 추천 기능"""
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    team_id = request.args.get("team_id") or request.form.get("team_id")
+    
+    if not team_id:
+        return jsonify({"error": "팀 정보가 필요합니다."}), 400
+    
+    # ObjectId로 변환
+    try:
+        team_object_id = ObjectId(team_id)
+    except:
+        return jsonify({"error": "잘못된 팀 ID 형식입니다."}), 400
+    
+    # 팀 정보 조회
+    team = db["teams"].find_one({"_id": team_object_id})
+    
+    if not team:
+        return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
+    
+    # 이미 추천했는지 확인
+    upvoted_users = team.get("upvotedUsers", [])
+    if current_user["_id"] in upvoted_users:
+        return jsonify({"error": "이미 추천하신 팀입니다."}), 400
+    
+    # 추천수 1 증가 및 추천한 사용자 목록에 추가
+    result = db["teams"].update_one(
+        {"_id": team_object_id},
+        {
+            "$inc": {"upvote": 1},
+            "$addToSet": {"upvotedUsers": current_user["_id"]}
+        }
+    )
+    
+    if result.modified_count > 0:
+        # 업데이트된 추천수 조회
+        updated_team = db["teams"].find_one({"_id": team_object_id})
+        new_upvote_count = updated_team.get("upvote", 0)
+        
+        return jsonify({
+            "success": True,
+            "new_upvote_count": new_upvote_count
+        })
+    else:
+        return jsonify({"error": "추천 처리에 실패했습니다."}), 500
 
 @app.route("/team_post_write/<team_id>", methods=["GET", "POST"])
 def team_post_write(team_id):

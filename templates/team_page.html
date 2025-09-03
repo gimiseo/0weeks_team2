@@ -109,15 +109,24 @@
       <h1 class="title is-3">{{ team.teamName }}</h1>
       <div class="subtitle is-6 mb-4">Week {{ team.week }} · {{ team.description }}</div>
       
-      <!-- 좋아요 버튼 및 좋아요 수 -->
+      <!-- 추천 버튼 및 추천 수 -->
       <div class="is-flex is-align-items-center mb-4">
+        {% if team.has_upvoted %}
+        <button class="button is-light is-small" disabled>
+          <span class="icon">
+            <i class="fas fa-thumbs-up"></i>
+          </span>
+          <span>추천됨</span>
+        </button>
+        {% else %}
         <button class="button is-light is-small" onclick="handleTeamLike(this)">
           <span class="icon">
             <i class="fas fa-thumbs-up"></i>
           </span>
-          <span>좋아요</span>
+          <span>추천</span>
         </button>
-        <span class="ml-2 has-text-grey is-size-7">좋아요 <span class="team-like-count">{{ team.upvote }}</span>개</span>
+        {% endif %}
+        <span class="ml-2 has-text-grey is-size-7">추천 <span class="team-like-count">{{ team.upvote }}</span>개</span>
       </div>
       
       <!-- 팀 멤버 사진 및 이름 -->
@@ -253,6 +262,36 @@
       let likeCount = parseInt(likeCountSpan.textContent, 10);
       likeCount += 1;
       likeCountSpan.textContent = likeCount;
+    }
+
+    function handleTeamLike(button) {
+      // AJAX 요청으로 서버에 추천 요청 보내기
+      fetch('/team_upvote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `team_id={{ team.id }}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // UI 업데이트
+          const likeCountSpan = document.querySelector('.team-like-count');
+          likeCountSpan.textContent = data.new_upvote_count;
+          
+          // 버튼 비활성화
+          button.disabled = true;
+          button.innerHTML = '<span class="icon"><i class="fas fa-thumbs-up"></i></span><span>추천됨</span>';
+          button.className = 'button is-light is-small';
+        } else {
+          alert(data.error || '추천 처리 중 오류가 발생했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('추천 처리 중 오류가 발생했습니다.');
+      });
     }
   </script>
 </body>
