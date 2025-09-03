@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>마이페이지 – WeeklyWeLearned</title>
+  <title>{{ target_user.nickname or target_user.username }} — WeeklyWeLearned</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     body { 
       background:#f6fbf9; 
-      padding-top: 3.25rem; /* navbar 높이만큼 패딩 추가 */
+      padding-top: 3.25rem;
     }
     .wwl-label{ 
       font-size:30px; 
@@ -24,7 +24,7 @@
       color: #ff3860 !important;
     }
     
-    /* 마이페이지 스타일 */
+    /* 프로필 헤더 스타일 */
     .profile-header {
       display: flex;
       align-items: center;
@@ -39,9 +39,19 @@
     .profile-pic {
       position: relative;
       display: inline-block;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      overflow: hidden;
+    }
+    
+    .profile-pic img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
     }
     
     .profile-pic:hover {
@@ -49,7 +59,7 @@
       box-shadow: 0 6px 20px rgba(0, 195, 46, 0.3);
     }
     
-    .profile-pic::after {
+    .profile-pic.clickable::after {
       content: '';
       position: absolute;
       top: 0;
@@ -63,58 +73,40 @@
       pointer-events: none;
     }
     
-    .profile-pic:hover::after {
+    .profile-pic.clickable:hover::after {
       opacity: 1;
     }
     
-    .profile-pic .edit-overlay {
+    .profile-pic.clickable .edit-overlay {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       color: white;
-      font-size: 24px;
+      font-size: 18px;
       opacity: 0;
       transition: opacity 0.3s ease;
       pointer-events: none;
       z-index: 1;
     }
     
-    .profile-pic:hover .edit-overlay {
+    .profile-pic.clickable:hover .edit-overlay {
       opacity: 1;
     }
     
-    .profile-pic img {
+    .profile-pic.clickable img {
       transition: filter 0.3s ease;
     }
     
-    .profile-pic:hover img {
+    .profile-pic.clickable:hover img {
       filter: brightness(0.8);
     }
     
+    .profile-name {
+      flex: 1;
+    }
+    
     .profile-actions {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
-      display: none;
-    }
-    
-    .profile-pic:hover .profile-actions {
-      display: block;
-    }
-    
-    .profile-name form {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    
-    .profile-buttons {
       margin-left: auto;
       display: flex;
       gap: 10px;
@@ -177,16 +169,19 @@
     
     .profile-pics {
       display: flex;
-      gap: -5px;
+      gap: -3px;
     }
     
     .profile-circle {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       background: #ddd;
       border: 2px solid white;
-      margin-left: -5px;
+      margin-left: -3px;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
     }
     
     .team-name {
@@ -219,6 +214,7 @@
     #teamList > .week-team-bar {
       display: none;
     }
+    
     /* 부드러운 전환 효과 */
     .team-list {
       transition: opacity 0.4s ease, transform 0.4s ease;
@@ -247,13 +243,12 @@
             <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
               <i class="fas fa-bell"></i>
             </span>
-            <!-- 읽지 않은 알림 수 배지 -->
             <span id="notification-badge" class="tag is-danger is-small" style="position: absolute; top: -5px; right: -5px; display: none; min-width: 20px; height: 20px; font-size: 12px; line-height: 1;">0</span>
           </div>
           
           <!-- 프로필 이미지와 닉네임 -->
-          <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/mypage'">
-            <div style="width: 40px; height: 40px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
+          <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/user/{{ current_user.username }}'">
+            <div style="width: 32px; height: 32px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
             <span class="has-text-weight-semibold">{{ current_user.nickname }}</span>
           </div>
           <span class="logout-text" onclick="window.location.href='/logout'" style="cursor: pointer; font-weight: 600; color: #363636;">로그아웃</span>
@@ -278,14 +273,16 @@
 
   <!-- 상단: 프로필 + 이름 + 버튼 -->
   <div class="profile-header">
-    <div class="profile-pic">
+    <div class="profile-pic {% if is_own_profile %}clickable{% endif %}">
       <img id="profileImg"
-        src="/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}"
-        alt="프로필사진" 
-        style="width:120px;height:120px;border-radius:50%;cursor:pointer;" 
+        src="/static/profile_imgs/{{ target_user.profile_img if target_user.profile_img else 'default-avatar.jpg' }}"
+        alt="프로필사진"
+        {% if is_own_profile %}
         onclick="uploadProfile()"
-        title="클릭하여 프로필 사진 변경">
+        title="클릭하여 프로필 사진 변경"
+        {% endif %}>
       
+      {% if is_own_profile %}
       <!-- 수정 가능 오버레이 -->
       <div class="edit-overlay">
         <i class="fas fa-camera"></i>
@@ -293,46 +290,77 @@
       
       <!-- 숨겨진 파일 입력 -->
       <input type="file" id="profileFileInput" accept="image/*" style="display: none;" onchange="handleProfileUpload(this)">
+      {% endif %}
     </div>
 
     <div class="profile-name">
-      <h2 class="title is-4">{{ current_user.nickname or current_user.username }}</h2>
-      <p class="subtitle is-6">@{{ current_user.username }}</p>
+      <h2 class="title is-4">{{ target_user.nickname or target_user.username }}</h2>
+      <p class="subtitle is-6">@{{ target_user.username }}</p>
+      {% if is_own_profile %}
       <p class="is-size-7 has-text-grey" style="margin-top: -10px;">
         <i class="fas fa-info-circle"></i> 프로필 사진을 클릭하시면 변경하실 수 있습니다.
       </p>
+      {% endif %}
     </div>
+
+    {% if not is_own_profile %}
+    <div class="profile-actions">
+      <button class="btn" onclick="window.location.href='/main_page'">
+        <i class="fas fa-arrow-left"></i> 메인으로
+      </button>
+    </div>
+    {% endif %}
   </div>
 
   <hr>
 
   <!-- 하단: 팀 리스트 -->
   <div class="team-list" id="teamList">
-    {% for team in teams %}
-    <div class="week-team-bar" onclick="window.location.href='/teampage?team={{ team.teamName }}&week={{ team.week }}'">
-      <div class="week-team">
-        <span class="week">{{ team.week }}주차</span>
-        <span class="team-name">{{ team.teamName }}</span>
-      </div>
-      <div class="tag-container">
-        <div class="profile-pics">
-          {% for member in team.members[:3] %}
-          <div class="profile-circle" 
-               style="background-image: url('/static/profile_imgs/{{ member.profile_img if member.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; cursor: pointer;"
-               onclick="event.stopPropagation(); window.location.href='/user/{{ member.username }}';"
-               title="{{ member.nickname }}"></div>
-          {% endfor %}
+    {% if user_teams %}
+      {% for team in user_teams %}
+      <div class="week-team-bar" onclick="window.location.href='/team_page/{{ team.id }}'">
+        <div class="week-team">
+          <span class="week">{{ team.week }}주차</span>
+          <span class="team-name">{{ team.teamName }}</span>
+        </div>
+        <div class="tag-container">
+          <div class="profile-pics">
+            {% for member in team.members[:3] %}
+            <div class="profile-circle" 
+                 style="background-image: url('/static/profile_imgs/{{ member.profile_img if member.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center;"
+                 onclick="event.stopPropagation(); window.location.href='/user/{{ member.username }}';"
+                 title="{{ member.nickname }}"></div>
+            {% endfor %}
+          </div>
         </div>
       </div>
-    </div>
-    {% endfor %}
+      {% endfor %}
+    {% else %}
+      <div class="has-text-centered" style="padding: 40px;">
+        <i class="fas fa-users" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
+        <p class="is-size-5 has-text-grey">
+          {% if is_own_profile %}
+            아직 참여한 팀이 없습니다.
+          {% else %}
+            {{ target_user.nickname or target_user.username }}님이 참여한 팀이 없습니다.
+          {% endif %}
+        </p>
+        {% if is_own_profile %}
+        <a href="/main_page" class="btn" style="margin-top: 20px;">
+          <i class="fas fa-plus"></i> 팀 찾아보기
+        </a>
+        {% endif %}
+      </div>
+    {% endif %}
   </div>
 
-  <!-- 페이지네이션 버튼 -->
+  <!-- 페이지네이션 버튼 (팀이 있을 때만 표시) -->
+  {% if user_teams and user_teams|length > 5 %}
   <div class="pagination-controls">
-    <button id="prevBtn" disabled>⬆ 이전</button>
-    <button id="nextBtn">⬇ 다음</button>
+    <button id="prevBtn" disabled>↑ 이전</button>
+    <button id="nextBtn">↓ 다음</button>
   </div>
+  {% endif %}
 
     </div>
   </section>
@@ -345,9 +373,15 @@
     const teamList = document.getElementById("teamList");
     if (!teamList) return;
 
-    const teams = Array.from(teamList.children);
+    const teams = Array.from(teamList.children).filter(child => child.classList.contains('week-team-bar'));
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
+
+    // 팀이 5개 이하면 페이지네이션 숨기기
+    if (teams.length <= itemsPerPage) {
+      teams.forEach(team => team.style.display = "block");
+      return;
+    }
 
     function updateVisibleItems() {
       teams.forEach((team, index) => {
@@ -356,8 +390,8 @@
             ? "block"
             : "none";
       });
-      prevBtn.disabled = currentPage === 0;
-      nextBtn.disabled = (currentPage + 1) * itemsPerPage >= teams.length;
+      if (prevBtn) prevBtn.disabled = currentPage === 0;
+      if (nextBtn) nextBtn.disabled = (currentPage + 1) * itemsPerPage >= teams.length;
     }
 
     function renderPage(withAnimation = true) {
@@ -374,25 +408,29 @@
       }
     }
 
-    prevBtn.addEventListener("click", () => {
-      if (currentPage > 0) {
-        currentPage--;
-        renderPage();
-      }
-    });
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        if (currentPage > 0) {
+          currentPage--;
+          renderPage();
+        }
+      });
+    }
 
-    nextBtn.addEventListener("click", () => {
-      if ((currentPage + 1) * itemsPerPage < teams.length) {
-        currentPage++;
-        renderPage();
-      }
-    });
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        if ((currentPage + 1) * itemsPerPage < teams.length) {
+          currentPage++;
+          renderPage();
+        }
+      });
+    }
 
     // 첫 로드 시 첫 페이지만 표시
     renderPage(false);
   });
 
-  // 알림 관련 함수들
+  // 알림 관련 함수들 (기존과 동일)
   function loadNotifications() {
     fetch('/get_notifications')
       .then(response => response.json())
@@ -413,11 +451,9 @@
     }
 
     notificationList.innerHTML = notifications.map(notification => {
-      // 알림 타입에 따른 아이콘 설정
       const icon = notification.type === 'comment' ? 'fa-comment' : 'fa-bell';
       const iconColor = notification.isRead ? '#dbdbdb' : '#00c32e';
       
-      // 댓글 작성자 정보 표시
       let authorInfo = '';
       if (notification.commentAuthor) {
         authorInfo = `<span class="has-text-weight-semibold">${notification.commentAuthor}</span>님이 `;
@@ -455,7 +491,6 @@
   }
 
   function handleNotificationClick(notificationId, postTitle, teamName, week) {
-    // 알림을 읽음으로 표시
     fetch('/mark_notification_read', {
       method: 'POST',
       headers: {
@@ -468,7 +503,6 @@
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        // 해당 글로 이동
         window.location.href = `/teampage?team=${encodeURIComponent(teamName)}&week=${week}#post-${encodeURIComponent(postTitle)}`;
       }
     })
@@ -541,12 +575,11 @@
   // 페이지 로드 시 알림 배지 업데이트
   document.addEventListener('DOMContentLoaded', function() {
     updateNotificationBadge();
-    
-    // 30초마다 알림 배지 업데이트
     setInterval(updateNotificationBadge, 30000);
   });
 
-  // 프로필 이미지 업로드 관련 함수들
+  // 프로필 이미지 업로드 관련 함수들 (본인 프로필일 때만)
+  {% if is_own_profile %}
   function uploadProfile() {
     document.getElementById('profileFileInput').click();
   }
@@ -555,24 +588,20 @@
     if (input.files && input.files[0]) {
       const file = input.files[0];
       
-      // 파일 크기 확인 (16MB 제한)
       if (file.size > 16 * 1024 * 1024) {
         alert('파일 크기는 16MB를 초과할 수 없습니다.');
         return;
       }
       
-      // 파일 형식 확인
       const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
         alert('허용되는 이미지 형식: PNG, JPG, JPEG, GIF, WEBP');
         return;
       }
       
-      // FormData 생성
       const formData = new FormData();
       formData.append('profile_image', file);
       
-      // 업로드 요청
       fetch('/update_profile_image', {
         method: 'POST',
         body: formData
@@ -580,20 +609,9 @@
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          // 프로필 이미지 업데이트
-          const profileImg = document.getElementById('profileImg');
-          const navProfileImg = document.querySelector('[onclick="window.location.href=\'/mypage\'"] div');
-          
-          // 캐시 방지를 위해 timestamp 추가
-          const timestamp = new Date().getTime();
-          const newImageUrl = `/static/profile_imgs/${data.new_profile_img}?t=${timestamp}`;
-          
-          profileImg.src = newImageUrl;
-          if (navProfileImg) {
-            navProfileImg.style.backgroundImage = `url('${newImageUrl}')`;
-          }
-          
           alert('프로필 이미지가 성공적으로 업데이트되었습니다!');
+          // 페이지 새로고침
+          window.location.reload();
         } else {
           alert(data.error || '프로필 이미지 업데이트에 실패했습니다.');
         }
@@ -604,6 +622,7 @@
       });
     }
   }
+  {% endif %}
 </script>
 </body>
 </html>

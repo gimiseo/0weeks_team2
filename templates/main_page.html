@@ -6,18 +6,35 @@
     <title>WWL</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="/static/main_page.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <header class="fixed-header">
-        <div class="wwl-label" onclick="handleWWLClick()">WeeklyWeLearned</div>
-        <div class="top-menu">
-            <div class="user-profile-btn" onclick="window.location.href='/my_page'" style="display: flex; align-items: center; cursor: pointer; padding: 8px 12px; background: #e8f5e8; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-right: 10px;">
-                <div class="avatar-frame" style="width: 32px !important; height: 32px !important; border: 3px solid #fff !important; background-image: url('{{ '/static/profile_imgs/' + current_user.profile_img if current_user.profile_img else '/static/images/default-avatar.jpg' }}'); margin-right: 8px;"></div>
-                <span style="font-size: 14px; font-weight: 500; color: #363636;">{{ current_user.nickname }}</span>
-            </div>
-            <span class="logout-text" onclick="window.location.href='/logout'">로그아웃</span>
+    <!-- 상단 통합 네비게이션 바 -->
+    <nav class="navbar is-white has-shadow is-fixed-top" style="z-index: 2000;">
+        <div class="navbar-brand">
+        <a class="navbar-item wwl-label" href="/main_page" style="cursor: pointer;">WeeklyWeLearned</a>
         </div>
-    </header>
+        <div class="navbar-end">
+        <div class="navbar-item">
+            <div class="is-flex is-align-items-center">
+            <!-- 알림 아이콘 -->
+            <div class="mr-3" style="position: relative;">
+                <span id="notification-icon" class="icon is-large" style="cursor: pointer; font-size: 1.5rem;" onclick="toggleNotifications()">
+                <i class="fas fa-bell"></i>
+                </span>
+                <span id="notification-badge" class="tag is-danger is-small" style="position: absolute; top: -5px; right: -5px; display: none; min-width: 20px; height: 20px; font-size: 12px; line-height: 1;">0</span>
+            </div>
+            
+            <!-- 프로필 이미지와 닉네임 -->
+            <div class="is-flex is-align-items-center mr-3" style="cursor: pointer;" onclick="window.location.href='/user/{{ current_user.username }}'">
+                <div style="width: 32px; height: 32px; margin-right: 8px; background-image: url('/static/profile_imgs/{{ current_user.profile_img if current_user.profile_img else 'default-avatar.jpg' }}'); background-size: cover; background-position: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);"></div>
+                <span class="has-text-weight-semibold">{{ current_user.nickname }}</span>
+            </div>
+            <span class="logout-text" onclick="window.location.href='/logout'" style="cursor: pointer; font-weight: 600; color: #363636;">로그아웃</span>
+            </div>
+        </div>
+        </div>
+    </nav>
 
     <div class="main-wrap container is-fluid" style="margin-top: 80px;">
         <!-- columns 를 정확히 반씩(is-6/is-6) + is-vcentered 로 세로 중앙 -->

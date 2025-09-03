@@ -1076,14 +1076,170 @@ def delete_team():
     else:
         return '<script>alert("팀 삭제에 실패했습니다."); history.back();</script>'
     
-@app.route("/my_page")
-def my_page():
+@app.route("/user/<username>")
+def user_profile(username):
+    current_username = get_current_user(request)
+    if not current_username:
+        return redirect(url_for("login"))
+    
+    # 현재 로그인한 사용자 정보
+    current_user = users_collection.find_one({"username": current_username})
+    if not current_user:
+        return redirect(url_for("login"))
+    
+    # 조회할 사용자 정보
+    target_user = users_collection.find_one({"username": username})
+    if not target_user:
+        return '<script>alert("사용자를 찾을 수 없습니다."); history.back();</script>'
+    
+    # 해당 사용자가 속한 팀들 조회
+    user_teams = []
+    teams = list(db["teams"].find({"members.userId": target_user["_id"]}))
+    
+    for team in teams:
+        # 팀 멤버들의 상세 정보 조회
+        team_members = []
+        for member in team.get("members", []):
+            member_info = users_collection.find_one({"_id": member["userId"]})
+            if member_info:
+                team_members.append({
+                    "username": member_info["username"],
+                    "nickname": member_info["nickname"],
+                    "profile_img": member_info.get("profile_img"),
+                    "role": member["role"]
+                })
+        
+        # 역할별로 정렬 (팀장 -> 관리자 -> 멤버 순)
+        role_order = {"master": 0, "admin": 1, "member": 2}
+        team_members.sort(key=lambda x: role_order.get(x["role"], 999))
+        
+        user_teams.append({
+            "id": str(team["_id"]),
+            "teamName": team["teamName"],
+            "description": team.get("description", ""),
+            "week": team["week"],
+            "upvote": team.get("upvote", 0),
+            "members": team_members,
+            "member_count": len(team_members)
+        })
+    
+    # 주차별로 정렬 (최신 주차부터)
+    user_teams.sort(key=lambda x: x["week"])
+    
+    # 자신의 프로필인지 확인
+    is_own_profile = (current_username == username)
+    
+    return render_template("user_profile.html", 
+                         target_user=target_user,
+                         user_teams=user_teams,
+                         current_user=current_user,
+                         is_own_profile=is_own_profile)
+
+@app.route("/mypage")
+def mypage():
+    """현재 사용자의 프로필 페이지로 리다이렉트"""
     username = get_current_user(request)
     if not username:
         return redirect(url_for("login"))
     
-    # 현재는 메인페이지로 리다이렉트, 추후 my_page.html 구현시 수정
-    return redirect(url_for("main_page"))
+    return redirect(url_for("user_profile", username=username))
+
+# 기존 my_page 라우트 수정
+@app.route("/my_page")
+def my_page():
+    """하위 호환성을 위해 mypage로 리다이렉트"""
+    return redirect(url_for("mypage"))
+
+@app.route("/update_profile_image", methods=["POST"])
+def update_profile_image():
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    if 'profile_image' not in request.files:
+        return jsonify({"error": "이미지 파일이 없습니다."}), 400
+    
+    file = request.files['profile_image']
+    if file.filename == '':
+        return jsonify({"error": "파일이 선택되지 않았습니다."}), 400
+    
+    if file and allowed_file(file.filename):
+        # 안전한 파일명 생성 및 확장자 처리 개선
+        original_filename = secure_filename(file.filename)
+        
+        # 확장자 추출 (소문자로 변환)
+        if '.' in original_filename:
+            ext = '.' + original_filename.rsplit('.', 1)[1].lower()
+        else:
+            # 확장자가 없는 경우 MIME 타입으로부터 추정
+            mime_type = file.content_type
+            if mime_type == 'image/jpeg':
+                ext = '.jpg'
+            elif mime_type == 'image/png':
+                ext = '.png'
+            elif mime_type == 'image/gif':
+                ext = '.gif'
+            elif mime_type == 'image/webp':
+                ext = '.webp'
+            else:
+                ext = '.jpg'  # 기본값
+        
+        # 새 파일명 생성
+        new_filename = f"{username}_profile{ext}"
+        
+        # 기존 프로필 이미지 삭제 (모든 가능한 확장자 확인)
+        current_user = users_collection.find_one({"username": username})
+        if current_user and current_user.get("profile_img"):
+            old_file_path = os.path.join(app.config["PROFILE_FOLDER"], current_user["profile_img"])
+            if os.path.exists(old_file_path):
+                try:
+                    os.remove(old_file_path)
+                    print(f"기존 프로필 이미지 삭제: {old_file_path}")
+                except Exception as e:
+                    print(f"기존 파일 삭제 실패: {e}")
+        
+        # 추가로 같은 사용자명의 다른 확장자 파일들도 정리
+        possible_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+        for possible_ext in possible_extensions:
+            possible_file = f"{username}_profile{possible_ext}"
+            possible_path = os.path.join(app.config["PROFILE_FOLDER"], possible_file)
+            if os.path.exists(possible_path) and possible_file != new_filename:
+                try:
+                    os.remove(possible_path)
+                    print(f"중복 프로필 이미지 정리: {possible_path}")
+                except Exception as e:
+                    print(f"중복 파일 정리 실패: {e}")
+        
+        # 새 파일 저장
+        try:
+            filepath = os.path.join(app.config["PROFILE_FOLDER"], new_filename)
+            file.save(filepath)
+            print(f"새 프로필 이미지 저장: {filepath}")
+        except Exception as e:
+            print(f"파일 저장 실패: {e}")
+            return jsonify({"error": "파일 저장에 실패했습니다."}), 500
+        
+        # 데이터베이스 업데이트
+        try:
+            result = users_collection.update_one(
+                {"username": username},
+                {"$set": {"profile_img": new_filename}}
+            )
+            
+            if result.modified_count > 0:
+                print(f"데이터베이스 업데이트 성공: {username} -> {new_filename}")
+                return jsonify({
+                    "success": True,
+                    "new_profile_img": new_filename
+                })
+            else:
+                return jsonify({"error": "데이터베이스 업데이트에 실패했습니다."}), 500
+                
+        except Exception as e:
+            print(f"데이터베이스 업데이트 실패: {e}")
+            return jsonify({"error": "데이터베이스 업데이트 중 오류가 발생했습니다."}), 500
+    
+    return jsonify({"error": "허용되지 않는 파일 형식입니다."}), 400
 
 if __name__ == "__main__":
     app.run(debug=True)
