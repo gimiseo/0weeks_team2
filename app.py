@@ -309,5 +309,9 @@ def team_join():
 
     return render_template("team_join.html")
 
+@app.route("/team_page", methods=["GET", "POST"])
+def team_page():
+    return render_template("team_page.html")
+
 if __name__ == "__main__":
     app.run(debug=True)
