@@ -249,10 +249,37 @@ def upload_image():
     image_url = f"/static/uploads/{image.filename}"
     return {"url": image_url}, 200
 
+@app.route('/delete_team', methods=['POST'])
+def delete_team():
+    user = get_current_user(request)
+    if not user:
+        return redirect(url_for("login"))
+
+    # 현재 사용자가 팀의 생성자인지 확인
+    team = db["teams"].find_one({"created_by": user})
+    if not team:
+        return "삭제 권한이 없습니다. 팀 생성자만 팀을 삭제할 수 있습니다!", 403
+
+    try:
+        # 팀과 관련된 모든 데이터 삭제
+        team_id = team["_id"]
+        
+        # 1. 팀의 모든 게시글 삭제 (현재는 메모리에 저장되어 있으므로 전역 posts 리스트 초기화)
+        global posts
+        posts.clear()  # 모든 게시글 삭제
+        
+        # 2. 팀 정보 삭제
+        db["teams"].delete_one({"_id": team_id})
+        
+        # 3. 팀과 관련된 추가 데이터가 있다면 여기서 삭제
+        # 예: 팀 멤버십 정보, 팀 설정 등
+        
+        # 대시보드로 리다이렉트
+        return redirect(url_for("dashboard"))
+        
+    except Exception as e:
+        return f"팀 삭제 중 오류가 발생했습니다: {str(e)}", 500
+
 if __name__ == "__main__":
-    # macOS에서 실행 시 호스트를 명시적으로 설정
-    app.run('0.0.0.0', port=5001, debug=True)
-    # macOS에서 실행 시 호스트를 명시적으로 설정
-    app.run('0.0.0.0', port=5001, debug=True)
     # macOS에서 실행 시 호스트를 명시적으로 설정
     app.run('0.0.0.0', port=5001, debug=True)

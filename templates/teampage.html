@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>팀 페이지 – WeeklyWeLearned</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     body { background:#f6fbf9; }
     .wwl-label { font-size:30px; font-weight:700; color:#00c32e; }
@@ -94,6 +95,12 @@
           <span class="icon is-small">+</span>
           팀 가입
         </a>
+        <button class="button is-danger ml-2" onclick="showDeleteTeamModal()">
+          <span class="icon is-small">
+            <i class="fas fa-trash"></i>
+          </span>
+          팀 삭제
+        </button>
       </div>
       <!-- 작성된 글 표시 -->
       {% if posts %}
@@ -134,6 +141,44 @@
     </div>
   </section>
 
+  <!-- 팀 삭제 확인 모달 -->
+  <div class="modal" id="deleteTeamModal">
+    <div class="modal-background" onclick="hideDeleteTeamModal()"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">팀 삭제 확인</p>
+        <button class="delete" aria-label="close" onclick="hideDeleteTeamModal()"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="content">
+          <p class="has-text-danger has-text-weight-semibold">
+            <span class="icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </span>
+            정말로 이 팀을 삭제하시겠습니까?
+          </p>
+          <p>이 작업은 되돌릴 수 없으며, 팀과 관련된 모든 데이터가 영구적으로 삭제됩니다:</p>
+          <ul>
+            <li>팀의 모든 게시글</li>
+            <li>팀 멤버 정보</li>
+            <li>팀 설정 및 기록</li>
+          </ul>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <form method="POST" action="/delete_team" style="display: inline;">
+          <button class="button is-danger" type="submit">
+            <span class="icon">
+              <i class="fas fa-trash"></i>
+            </span>
+            <span>팀 삭제</span>
+          </button>
+        </form>
+        <button class="button" onclick="hideDeleteTeamModal()">취소</button>
+      </footer>
+    </div>
+  </div>
+
   <script>
     function handleLike(button) {
       const likeCountSpan = button.nextElementSibling.querySelector('.like-count');
@@ -148,6 +193,21 @@
       likeCount += 1;
       likeCountSpan.textContent = likeCount;
     }
+
+    function showDeleteTeamModal() {
+      document.getElementById('deleteTeamModal').classList.add('is-active');
+    }
+
+    function hideDeleteTeamModal() {
+      document.getElementById('deleteTeamModal').classList.remove('is-active');
+    }
+
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        hideDeleteTeamModal();
+      }
+    });
   </script>
 </body>
 </html>
