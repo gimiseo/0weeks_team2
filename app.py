@@ -419,6 +419,10 @@ def teams_partial(week):
                     "profile_img": user_info.get("profile_img"),
                     "role": member["role"]
                 })
+                
+        # 역할별로 정렬 (팀장 -> 관리자 -> 멤버 순)
+        role_order = {"master": 0, "admin": 1, "member": 2}
+        team_members.sort(key=lambda x: role_order.get(x["role"], 999))
         
         teams_with_members.append({
             "id": str(team["_id"]),  
