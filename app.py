@@ -566,6 +566,50 @@ def team_join_specific(team_id):
     
     return render_template("team_join_specific.html", team=team)
 
+def sort_comments_by_hierarchy(comments):
+    """댓글을 부모-자식 관계에 따라 정렬하는 함수"""
+    if not comments:
+        return []
+    
+    try:
+        # 일반 댓글과 답댓글 분리
+        main_comments = []
+        replies = []
+        
+        for comment in comments:
+            if comment.get("isReply", False):
+                replies.append(comment)
+            else:
+                main_comments.append(comment)
+        
+        # 일반 댓글을 생성 시간 순으로 정렬
+        main_comments.sort(key=lambda x: x.get("createdAt", datetime.datetime.min))
+        
+        # 답댓글을 생성 시간 순으로 정렬
+        replies.sort(key=lambda x: x.get("createdAt", datetime.datetime.min))
+        
+        # 결과 리스트
+        sorted_comments = []
+        
+        # 각 일반 댓글 뒤에 해당하는 답댓글들 배치
+        for main_comment in main_comments:
+            sorted_comments.append(main_comment)
+            
+            # 해당 일반 댓글의 답댓글들 찾아서 추가
+            main_comment_id = main_comment.get("_id")
+            if main_comment_id:
+                for reply in replies:
+                    parent_id = reply.get("parentCommentId")
+                    if parent_id and str(parent_id) == str(main_comment_id):
+                        sorted_comments.append(reply)
+        
+        return sorted_comments
+        
+    except Exception as e:
+        print(f"댓글 정렬 중 오류 발생: {e}")
+        # 오류가 발생하면 원본 댓글 리스트를 그대로 반환
+        return comments
+
 @app.route("/team_page")
 def team_page_redirect():
     return redirect(url_for("main_page"))
@@ -616,7 +660,7 @@ def team_page(team_id):
     is_member = any(member["userId"] == current_user["_id"] for member in team.get("members", []))
     
     # Check if current user is team master
-    is_team_master = any(
+    is_master = any(
         member["userId"] == current_user["_id"] and member["role"] == "master"
         for member in team.get("members", [])
     )
@@ -626,10 +670,14 @@ def team_page(team_id):
     
     # 각 글에 대해 현재 사용자가 좋아요했는지 확인하고 댓글 정렬
     posts_with_ids = []
+    
     for post in team.get("posts", []):
         is_post_author = post.get("authorId") == current_user["_id"]
         has_liked = current_user["_id"] in post.get("likedUsers", [])
-        
+
+        # 댓글을 부모-자식 관계에 따라 정렬
+        sorted_comments = sort_comments_by_hierarchy(post.get("comments", []))
+
         post_data = {
             "id": str(post.get("_id", "")),  # Convert ObjectId to string, empty if no _id
             "title": post.get("title", ""),
@@ -640,9 +688,10 @@ def team_page(team_id):
             "updatedAt": post.get("updatedAt"),
             "likes": post.get("likes", 0),
             "has_liked": has_liked,
-            
+            "comments": sorted_comments,  # 여기에 댓글 포함
+
             "can_edit": is_post_author,
-            "can_delete": is_post_author or is_team_master
+            "can_delete": is_post_author or is_master
         }
         posts_with_ids.append(post_data)
 
@@ -662,6 +711,7 @@ def team_page(team_id):
     return render_template("team_page.html",
                            team=team_data,
                            is_member=is_member,
+                           is_master=is_master,
                            current_user=current_user_data)
 
 @app.route("/team_upvote", methods=["POST"])
@@ -1381,6 +1431,245 @@ def update_profile_image():
             return jsonify({"error": "데이터베이스 업데이트 중 오류가 발생했습니다."}), 500
     
     return jsonify({"error": "허용되지 않는 파일 형식입니다."}), 400
+
+@app.route("/add_comment", methods=["POST"])
+def add_comment():
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    data = request.get_json()
+    post_title = data.get("post_title")
+    team_id = data.get("team_id")
+    comment_content = data.get("comment_content")
+    
+    if not all([post_title, team_id, comment_content]):
+        return jsonify({"error": "필수 정보가 누락되었습니다."}), 400
+    
+    # 팀 정보 조회 (team_id 기반)
+    try:
+        team = db["teams"].find_one({"_id": ObjectId(team_id)})
+    except:
+        return jsonify({"error": "잘못된 team_id 형식입니다."}), 400
+    
+    if not team:
+        return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
+    
+    # 게시글 작성자 찾기
+    post_author = None
+    for post in team.get("posts", []):
+        if post.get("title") == post_title:
+            post_author = users_collection.find_one({"_id": post.get("authorId")})
+            break
+    
+    # 새 댓글 생성
+    new_comment = {
+        "_id": ObjectId(),
+        "content": comment_content,
+        "author": current_user["nickname"],
+        "authorId": current_user["_id"],
+        "isReply": False,
+        "createdAt": datetime.datetime.utcnow()
+    }
+    
+    # 포스트에 댓글 추가
+    result = db["teams"].update_one(
+        {"_id": ObjectId(team_id), "posts.title": post_title},
+        {"$push": {"posts.$.comments": new_comment}}
+    )
+    
+    # 알림 생성 (자신 글이 아닐 때)
+    if result.modified_count > 0 and post_author and post_author["_id"] != current_user["_id"]:
+        notification = {
+            "userId": post_author["_id"],
+            "type": "comment",
+            "title": f"{current_user['nickname']}님이 댓글을 달았습니다",
+            "message": f'"{post_title}" 글에 새 댓글이 있습니다: "{comment_content[:50]}{"..." if len(comment_content) > 50 else ""}"',
+            "postTitle": post_title,
+            "teamId": ObjectId(team_id),
+            "commentAuthor": current_user["nickname"],
+            "commentAuthorId": current_user["_id"],
+            "commentContent": comment_content,
+            "isRead": False,
+            "createdAt": datetime.datetime.utcnow()
+        }
+        db["notifications"].insert_one(notification)
+    
+    if result.modified_count > 0:
+        return jsonify({
+            "success": True,
+            "comment": {
+                "_id": str(new_comment["_id"]),
+                "content": new_comment["content"],
+                "author": new_comment["author"],
+                "authorId": str(new_comment["authorId"]),
+                "isReply": False,
+                "createdAt": new_comment["createdAt"].strftime("%Y-%m-%d %H:%M")
+            }
+        })
+    else:
+        return jsonify({"error": "댓글 추가에 실패했습니다."}), 500
+
+@app.route("/edit_comment", methods=["POST"])
+def edit_comment():
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    data = request.get_json()
+    team_id = data.get("team_id")
+    post_title = data.get("post_title")
+    comment_id = data.get("comment_id")
+    new_content = data.get("new_content")
+    
+    if not all([team_id, post_title, comment_id, new_content]):
+        return jsonify({"error": "필수 정보가 누락되었습니다."}), 400
+    
+    team = db["teams"].find_one({"_id": ObjectId(team_id)})
+    if not team:
+        return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
+    
+    # 댓글 찾기
+    post_index, comment_index = None, None
+    for p_idx, post in enumerate(team.get("posts", [])):
+        if post.get("title") == post_title:
+            for c_idx, comment in enumerate(post.get("comments", [])):
+                if str(comment.get("_id")) == comment_id and comment.get("authorId") == current_user["_id"]:
+                    post_index, comment_index = p_idx, c_idx
+                    break
+            break
+    
+    if post_index is None or comment_index is None:
+        return jsonify({"error": "댓글을 찾을 수 없거나 수정 권한이 없습니다."}), 404
+    
+    result = db["teams"].update_one(
+        {"_id": ObjectId(team_id), "posts.title": post_title},
+        {"$set": {
+            f"posts.{post_index}.comments.{comment_index}.content": new_content,
+            f"posts.{post_index}.comments.{comment_index}.updatedAt": datetime.datetime.utcnow()
+        }}
+    )
+    
+    if result.modified_count > 0:
+        return jsonify({"success": True})
+    else:
+        return jsonify({"error": "댓글 수정에 실패했습니다."}), 500
+
+
+@app.route("/delete_comment", methods=["POST"])
+def delete_comment():
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+    
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+    
+    data = request.get_json()
+    team_id = data.get("team_id")
+    post_title = data.get("post_title")
+    comment_id = data.get("comment_id")
+    
+    if not all([team_id, post_title, comment_id]):
+        return jsonify({"error": "필수 정보가 누락되었습니다."}), 400
+    
+    team = db["teams"].find_one({"_id": ObjectId(team_id)})
+    if not team:
+        return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
+    
+    for post in team.get("posts", []):
+        if post.get("title") == post_title:
+            comments = post.get("comments", [])
+            
+            comment_to_delete = None
+            for comment in comments:
+                if str(comment.get("_id")) == comment_id and (comment.get("authorId") == current_user["_id"]):
+                    comment_to_delete = comment
+                    break
+            
+            if not comment_to_delete:
+                return jsonify({"error": "댓글을 찾을 수 없거나 삭제 권한이 없습니다."}), 404
+            
+            new_comments = []
+            for comment in comments:
+                if str(comment.get("_id")) == comment_id:
+                    continue
+                if comment.get("isReply", False) and str(comment.get("parentCommentId")) == comment_id:
+                    continue
+                new_comments.append(comment)
+            
+            result = db["teams"].update_one(
+                {"_id": ObjectId(team_id), "posts.title": post_title},
+                {"$set": {"posts.$.comments": new_comments}}
+            )
+            
+            if result.modified_count > 0:
+                return jsonify({"success": True, "message": "댓글이 삭제되었습니다."})
+            else:
+                return jsonify({"error": "댓글 삭제에 실패했습니다."}), 500
+    
+    return jsonify({"error": "해당 글을 찾을 수 없습니다."}), 404
+
+@app.route("/add_reply", methods=["POST"])
+def add_reply():
+    username = get_current_user(request)
+    if not username:
+        return jsonify({"error": "로그인이 필요합니다."}), 401
+
+    current_user = users_collection.find_one({"username": username})
+    if not current_user:
+        return jsonify({"error": "사용자 정보를 찾을 수 없습니다."}), 401
+
+    data = request.get_json()
+    team_id = data.get("team_id")
+    post_title = data.get("post_title")
+    parent_comment_id = data.get("parent_comment_id")
+    reply_content = data.get("reply_content")
+
+    if not all([team_id, post_title, parent_comment_id, reply_content]):
+        return jsonify({"error": "필수 정보가 누락되었습니다."}), 400
+
+    team = db["teams"].find_one({"_id": ObjectId(team_id)})
+    if not team:
+        return jsonify({"error": "팀을 찾을 수 없습니다."}), 404
+
+    new_reply = {
+        "_id": ObjectId(),
+        "content": reply_content,
+        "author": current_user["nickname"],
+        "authorId": current_user["_id"],
+        "isReply": True,
+        "parentCommentId": ObjectId(parent_comment_id),
+        "createdAt": datetime.datetime.utcnow()
+    }
+
+    result = db["teams"].update_one(
+        {"_id": ObjectId(team_id), "posts.title": post_title},
+        {"$push": {"posts.$.comments": new_reply}}
+    )
+
+    if result.modified_count > 0:
+        return jsonify({
+            "success": True,
+            "reply": {
+                "_id": str(new_reply["_id"]),
+                "content": new_reply["content"],
+                "author": new_reply["author"],
+                "authorId": str(new_reply["authorId"]),
+                "createdAt": new_reply["createdAt"].strftime("%Y-%m-%d %H:%M")
+            }
+        })
+    else:
+        return jsonify({"error": "답댓글 추가에 실패했습니다."}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -268,7 +268,137 @@
                   </div>
                   {% endif %}
                 </div>
-            </div>
+
+                <!-- 댓글 섹션 -->
+                <div class="mt-4">
+                  <h4 class="title is-6">댓글 <span class="has-text-grey is-size-7">({{ post.comments | length }}개)</span></h4>
+                  
+                  <!-- 기존 댓글들 표시 -->
+                  <div class="comments-list" id="comments-{{ loop.index }}">
+                    {% if post.comments %}
+                      {% for comment in post.comments %}
+                      <div class="comment-item mb-3 p-3 {{ 'ml-4' if comment.get('isReply') else '' }}" 
+                          style="background: {{ '#f0f8ff' if comment.get('isReply') else '#f8f9fa' }}; border-radius: 8px; border-left: 3px solid {{ '#007bff' if comment.get('isReply') else '#00c32e' }};"
+                          id="comment-{{ comment._id }}">
+                        <div class="is-flex is-justify-content-between is-align-items-start">
+                          <div style="flex: 1;">
+                            {% if comment.get('isReply') %}
+                            <p class="has-text-info is-size-7 mb-1">
+                              <i class="fas fa-reply mr-1"></i>대댓글
+                            </p>
+                            {% endif %}
+                            <p class="has-text-weight-semibold is-size-7">{{ comment.author }}</p>
+                            <div class="comment-content mt-1" id="comment-content-{{ comment._id }}">
+                              <p>{{ comment.content }}</p>
+                            </div>
+                            <!-- 수정 폼 (숨김) -->
+                            <div class="comment-edit-form mt-1" id="edit-form-{{ comment._id }}" style="display: none;">
+                              <div class="field has-addons">
+                                <div class="control is-expanded">
+                                  <input class="input is-small" type="text" value="{{ comment.content }}" 
+                                        id="edit-input-{{ comment._id }}">
+                                </div>
+                                <div class="control">
+                                  <button class="button is-success is-small" 
+                                          onclick="saveCommentEdit('{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
+                                    저장
+                                  </button>
+                                </div>
+                                <div class="control">
+                                  <button class="button is-light is-small" 
+                                          onclick="cancelCommentEdit('{{ comment._id }}')">
+                                    취소
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <!-- 댓글 액션 버튼들 -->
+                            <div class="comment-actions mt-2" style="font-size: 12px;">
+                              {% if not comment.get('isReply') %}
+                              <button class="button is-text is-small" style="padding: 2px 6px; height: auto;" 
+                                      onclick="showReplyForm('{{ comment._id }}')">
+                                <span class="icon is-small">
+                                  <i class="fas fa-reply"></i>
+                                </span>
+                                <span>대댓글</span>
+                              </button>
+                              {% endif %}
+                              
+                              {% if comment.authorId == current_user._id %}
+                              <button class="button is-text is-small" style="padding: 2px 6px; height: auto;" 
+                                      onclick="editComment('{{ comment._id }}')">
+                                <span class="icon is-small">
+                                  <i class="fas fa-edit"></i>
+                                </span>
+                                <span>수정</span>
+                              </button>
+                              <button class="button is-text has-text-danger is-small" style="padding: 2px 6px; height: auto;" 
+                                      onclick="deleteComment('{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
+                                <span class="icon is-small">
+                                  <i class="fas fa-trash"></i>
+                                </span>
+                                <span>삭제</span>
+                              </button>
+                              {% endif %}
+                            </div>
+                            
+                            <!-- 대댓글 작성 폼 (숨김) -->
+                            {% if not comment.get('isReply') %}
+                            <div class="reply-form mt-2" id="reply-form-{{ comment._id }}" style="display: none;">
+                              <div class="field has-addons">
+                                <div class="control is-expanded">
+                                  <input class="input is-small" type="text" placeholder="대댓글을 입력하세요..." 
+                                        id="reply-input-{{ comment._id }}" 
+                                        onkeypress="handleReplyKeyPress(event, '{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
+                                </div>
+                                <div class="control">
+                                  <button class="button is-primary is-small" 
+                                          onclick="addReply('{{ comment._id }}', '{{ post.title }}', '{{ team.id }}')">
+                                    <span class="icon is-small">
+                                      <i class="fas fa-paper-plane"></i>
+                                    </span>
+                                  </button>
+                                </div>
+                                <div class="control">
+                                  <button class="button is-light is-small" 
+                                          onclick="hideReplyForm('{{ comment._id }}')">
+                                    취소
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            {% endif %}
+                          </div>
+                          <span class="has-text-grey is-size-7">{{ comment.createdAt.strftime('%m/%d %H:%M') if comment.createdAt else '' }}</span>
+                        </div>
+                      </div>
+                      {% endfor %}
+                    {% else %}
+                      <p class="has-text-grey is-size-7">아직 댓글이 없습니다.</p>
+                    {% endif %}
+                  </div>
+                  
+                  <!-- 댓글 작성 폼 (모든 로그인 사용자) -->
+                  <div class="mt-3">
+                    <div class="field has-addons">
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" placeholder="댓글을 입력하세요..." 
+                              id="comment-input-{{ loop.index }}" 
+                              onkeypress="handleCommentKeyPress(event, '{{ post.title }}', '{{ team.id }}', {{ loop.index }})">
+                      </div>
+                      <div class="control">
+                        <button class="button is-primary is-small" 
+                                onclick="addComment('{{ post.title }}', '{{ team.id }}', {{ loop.index }})">
+                          <span class="icon is-small">
+                            <i class="fas fa-paper-plane"></i>
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
         </article>
         </div>
@@ -355,6 +485,183 @@
       .catch(error => {
         console.error('Error:', error);
         alert('좋아요 처리 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 댓글 관련 함수들
+    function handleCommentKeyPress(event, postTitle, teamId, postIndex) {
+      if (event.key === 'Enter') {
+        addComment(postTitle, teamId, postIndex);
+      }
+    }
+
+    function addComment(postTitle, teamId, postIndex) {
+      const input = document.getElementById(`comment-input-${postIndex}`);
+      const content = input.value.trim();
+      
+      if (!content) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      fetch('/add_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          post_title: postTitle,
+          team_id: teamId,
+          comment_content: content
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 👉 성공하면 그냥 새로고침
+          location.reload();
+        } else {
+          alert(data.error || '댓글 추가에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 추가 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 댓글 수정 관련 함수들
+    function editComment(commentId) {
+      // 댓글 내용 숨기고 수정 폼 표시
+      document.getElementById(`comment-content-${commentId}`).style.display = 'none';
+      document.getElementById(`edit-form-${commentId}`).style.display = 'block';
+    }
+
+    function cancelCommentEdit(commentId) {
+      // 수정 폼 숨기고 댓글 내용 표시
+      document.getElementById(`comment-content-${commentId}`).style.display = 'block';
+      document.getElementById(`edit-form-${commentId}`).style.display = 'none';
+    }
+
+    function saveCommentEdit(commentId, postTitle, teamId) {
+      const newContent = document.getElementById(`edit-input-${commentId}`).value.trim();
+      
+      if (!newContent) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      fetch('/edit_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          post_title: postTitle,
+          comment_id: commentId,
+          new_content: newContent
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 👉 성공 시 페이지 새로고침
+          location.reload();
+        } else {
+          alert(data.error || '댓글 수정에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 수정 중 오류가 발생했습니다.');
+      });
+    }
+
+    function deleteComment(commentId, postTitle, teamId) {
+      if (!confirm('정말로 이 댓글을 삭제하시겠습니까?\n(답댓글이 있다면 함께 삭제됩니다)')) {
+        return;
+      }
+
+      fetch('/delete_comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          post_title: postTitle,
+          comment_id: commentId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 페이지 새로고침으로 간단하게 처리 (백엔드에서 이미 정확히 처리됨)
+          if (data.message) {
+            alert(data.message);
+          }
+          location.reload();
+        } else {
+          alert(data.error || '댓글 삭제에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('댓글 삭제 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 답댓글 관련 함수들
+    function showReplyForm(commentId) {
+      document.getElementById(`reply-form-${commentId}`).style.display = 'block';
+      document.getElementById(`reply-input-${commentId}`).focus();
+    }
+
+    function hideReplyForm(commentId) {
+      document.getElementById(`reply-form-${commentId}`).style.display = 'none';
+      document.getElementById(`reply-input-${commentId}`).value = '';
+    }
+
+    function handleReplyKeyPress(event, commentId, postTitle, teamId) {
+      if (event.key === 'Enter') {
+        addReply(commentId, postTitle, teamId);
+      }
+    }
+
+    function addReply(parentCommentId, postTitle, teamId) {
+      const input = document.getElementById(`reply-input-${parentCommentId}`);
+      const content = input.value.trim();
+      
+      if (!content) {
+        alert('답댓글 내용을 입력해주세요.');
+        return;
+      }
+
+      fetch('/add_reply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          post_title: postTitle,
+          parent_comment_id: parentCommentId,
+          reply_content: content
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 👉 성공하면 그냥 새로고침
+          location.reload();
+        } else {
+          alert(data.error || '답댓글 추가에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('답댓글 추가 중 오류가 발생했습니다.');
       });
     }
   </script>
