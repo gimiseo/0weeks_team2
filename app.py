@@ -266,8 +266,8 @@ def teams_partial(week):
                          selected_week=week,
                          selected_teams=teams_with_members)
 
-@app.route("/team_join", methods=["GET", "POST"])
-def team_join():
+@app.route("/team_join/<int:default_week>", methods=["GET", "POST"])
+def team_join(default_week=None):
     username = get_current_user(request)
     if not username:
         return redirect(url_for("login"))
@@ -321,7 +321,7 @@ def team_join():
         success_message = f"'{target_team['teamName']}' 팀에 성공적으로 가입되었습니다!"
         return f'<script>alert("{success_message}"); window.location.href="{url_for("dashboard")}";</script>'
 
-    return render_template("team_join.html")
+    return render_template("team_join.html", default_week=default_week)
 
 @app.route("/team_join/<team_id>", methods=["GET", "POST"])
 def team_join_specific(team_id):

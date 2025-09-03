@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <div class="sign-up-head">
-        <a href="{{ url_for('login') }}" class="link-btn">← 뒤로가기</a>
+        <a href="{{ url_for('main_page') }}" class="link-btn">← 뒤로가기</a>
         <h2 class="title">팀 가입</h2>
     </div>
 
@@ -14,7 +14,7 @@
             <span>주차</span>
             <select name="week" required>
                 {% for i in range(0, 21) %}
-                <option value="{{ i }}">Week {{ i }}</option>
+                <option value="{{ i }}" {% if default_week is not none and i == default_week %}selected{% endif %}>Week {{ i }}</option>
                 {% endfor %}
             </select>
         </div><br>

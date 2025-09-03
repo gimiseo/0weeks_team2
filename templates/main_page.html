@@ -11,7 +11,7 @@
     <div class="wwl-label" onclick="handleWWLClick()">WeeklyWeLearned</div>
     <div class="top-menu">
         <div class="user-profile-btn" onclick="window.location.href='/my_page'" style="display: flex; align-items: center; cursor: pointer; padding: 8px 12px; background: #e8f5e8; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-right: 10px;">
-            <div class="avatar-frame" style="width: 32px; height: 32px; background-image: url('{{ '/static/profile_imgs/' + current_user.profile_img if current_user.profile_img else '/static/images/default-avatar.jpg' }}'); margin-right: 8px;"></div>
+            <div class="avatar-frame" style="width: 32px !important; height: 32px !important; border: 3px solid #fff !important; background-image: url('{{ '/static/profile_imgs/' + current_user.profile_img if current_user.profile_img else '/static/images/default-avatar.jpg' }}'); margin-right: 8px;"></div>
             <span style="font-size: 14px; font-weight: 500; color: #363636;">{{ current_user.nickname }}</span>
         </div>
         <span class="logout-text" onclick="window.location.href='/logout'">로그아웃</span>
@@ -44,13 +44,18 @@
             </div>
 
             <!-- 우측 50% : 팀 리스트 (가운데 정렬) -->
-            <div class="column is-6 team-column">
+            <div class="column is-6 team-column" style="overflow-y: scroll !important;">
                 <div class="half-center">
                     <div class="panel-inner team-stack" id="team-section">
                         <div class="team-list-header mb-4">
-                            <h3 class="title is-4 has-text-centered">
-                                Week {{ selected_week }} 팀 목록
-                            </h3>
+                            <div class="is-flex is-align-items-center is-justify-content-space-between">
+                                <h3 class="title is-4 has-text-centered" style="flex: 1; margin-bottom: 0;">
+                                    Week {{ selected_week }} 팀 목록
+                                </h3>
+                                <a href="/team_join/{{ selected_week }}" class="button is-success is-small">
+                                    <span>+ 팀 가입</span>
+                                </a>
+                            </div>
                         </div>
                         
                         <div id="team-list-container">

@@ -1,3 +1,14 @@
+<div class="team-list-header mb-4">
+    <div class="is-flex is-align-items-center is-justify-content-space-between">
+        <h3 class="title is-4 has-text-centered" style="flex: 1; margin-bottom: 0;">
+            Week {{ selected_week }} 팀 목록
+        </h3>
+        <a href="/team_join/{{ selected_week }}" class="button is-success is-small">
+            <span>+ 팀 가입</span>
+        </a>
+    </div>
+</div>
+
 {% for team in selected_teams %}
 <div class="notification is-success mb-4 team-card" style="cursor: pointer;" onclick="window.location.href='/team_page/{{ team.id }}'">
     <div class="team-info">
