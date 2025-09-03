@@ -3,59 +3,174 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WWL</title>
+  <title>WWL - 게시글 수정</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body { background:#f6fbf9; }
-    .editor-container {
-      height: 400px;
-      background: #fff;
+    body { 
+      background:#f6fbf9; 
+    }
+    .wwl-label { 
+        position: fixed;
+        top: 10px;
+        left: 16px;
+        z-index: 2000;
+        font-size: 30px;
+        font-weight: 700;
+        color: #00c32e;
+        cursor: pointer;
+    }
+    .top-menu {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+    }
+    .logout-text {
+        margin-left: 8px;
+        font-weight: 600;
+        color: #363636;
+        cursor: pointer;
+    }
+    .logout-text:hover {
+        color: #ff3860;
+    }
+    .avatar-frame{ 
+      width:72px; height:72px; border-radius:50%; 
+      background-size:cover; background-position:center; 
+      border:3px solid #fff; 
+      box-shadow:0 2px 8px rgba(0,0,0,.2); 
+    }
+    .note-editor.note-frame {
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+    }
+    .section {
+        margin-top: 80px;
+        padding-top: 1rem;
     }
   </style>
 </head>
 <body>
+  <!-- 상단 메뉴 -->
+  <div class="wwl-label" onclick="handleWWLClick()">WeeklyWeLearned</div>
+  <div class="top-menu">
+      <div class="user-profile-btn" onclick="window.location.href='/my_page'" style="display: flex; align-items: center; cursor: pointer; padding: 8px 12px; background: #e8f5e8; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-right: 10px;">
+          <div class="avatar-frame" style="width: 32px !important; height: 32px !important; border: 3px solid #fff !important; background-image: url('{{ '/static/profile_imgs/' + current_user.profile_img if current_user.profile_img else '/static/images/default-avatar.jpg' }}'); margin-right: 8px;"></div>
+          <span style="font-size: 14px; font-weight: 500; color: #363636;">{{ current_user.nickname }}</span>
+      </div>
+      <span class="logout-text" onclick="window.location.href='/logout'">로그아웃</span>
+  </div>
+
+  <!-- 메인 컨텐츠 -->
   <section class="section">
     <div class="container">
-      <h1 class="title is-3">글 수정</h1>
-      <form method="POST" action="/update_post">
-        <input type="hidden" name="old_title" value="{{ post.title }}">
-        <div class="field">
-          <label class="label">제목</label>
-          <div class="control">
-            <input class="input" type="text" name="title" value="{{ post.title }}" required>
+      
+      <!-- 뒤로가기 버튼 -->
+      <div class="mb-3">
+        <a href="/team_page/{{ team.id }}" class="button is-small" style="background: none; border: none; box-shadow: none; padding-left: 0;">
+          <span class="icon">
+            <i class="fas fa-arrow-left"></i>
+          </span>
+          <span>팀 페이지로 돌아가기</span>
+        </a>
+      </div>
+      
+      <!-- 팀 헤더 -->
+      <div class="box">
+        <h1 class="title is-3">{{ team.teamName }}</h1>
+        <p class="subtitle is-5 has-text-grey">{{ team.description }}</p>
+      </div>
+
+      <!-- 게시글 수정 에디터 -->
+      <div class="box">
+        <h2 class="title is-4 mb-3">게시글 수정</h2>
+        <form method="POST" action="/edit_post">
+          <input type="hidden" name="team_id" value="{{ team.id }}">
+          <input type="hidden" name="post_id" value="{{ post.id }}">
+          <input type="hidden" name="original_title" value="{{ post.title }}">
+          
+          <div class="field">
+            <label class="label">작성자</label>
+            <div class="control">
+              <input class="input" type="text" value="{{ post.author }}" readonly>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <label class="label">내용</label>
-          <div id="editor" class="editor-container">{{ post.content | safe }}</div>
-          <textarea name="content" id="content" style="display:none;"></textarea>
-        </div>
-        <div class="control">
-          <button class="button is-success" type="submit">수정하기</button>
-        </div>
-      </form>
+          
+          <div class="field">
+            <label class="label">제목</label>
+            <div class="control">
+              <input class="input" type="text" name="title" value="{{ post.title }}" required>
+            </div>
+          </div>
+          
+          <div class="field">
+            <label class="label">내용</label>
+            <textarea id="editor" name="content">{{ post.content | safe }}</textarea>
+          </div>
+          
+          <div class="control">
+            <button class="button is-success mt-3" type="submit">수정 완료</button>
+            <a href="/team_page/{{ team.id }}" class="button is-light mt-3 ml-2">취소</a>
+          </div>
+        </form>
+      </div>
+
     </div>
   </section>
-  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-  <script>
-    const quill = new Quill('#editor', {
-      theme: 'snow',
-      modules: {
-        toolbar: [
-          [{ header: [1, 2, false] }],
-          ['bold', 'italic', 'underline'],
-          ['link', 'image'],
-          [{ list: 'ordered' }, { list: 'bullet' }]
-        ]
-      }
-    });
 
-    // 에디터 내용 폼에 저장
-    document.querySelector('form').addEventListener('submit', function() {
-      document.querySelector('#content').value = quill.root.innerHTML;
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+  <script>
+    // WWL 라벨 클릭 처리 함수
+    function handleWWLClick() {
+        if (window.location.pathname === '/main_page') {
+            window.location.reload();
+        } else {
+            window.location.href = '/main_page';
+        }
+    }
+
+    $(document).ready(function() {
+      $('#editor').summernote({
+        height: 400,
+        lang: 'ko-KR',
+        toolbar: [
+          ['style', ['bold', 'italic', 'underline', 'clear']],
+          ['font', ['strikethrough', 'superscript', 'subscript']],
+          ['fontsize', ['fontsize']],
+          ['color', ['color']],
+          ['para', ['ul', 'ol', 'paragraph']],
+          ['height', ['height']],
+          ['insert', ['link', 'picture', 'video']],
+          ['view', ['fullscreen', 'codeview', 'help']]
+        ],
+        callbacks: {
+          onImageUpload: function(files) {
+            const formData = new FormData();
+            formData.append('image', files[0]);
+
+            // 서버에 이미지 업로드 요청
+            $.ajax({
+              url: '/upload_image',
+              method: 'POST',
+              data: formData,
+              contentType: false,
+              processData: false,
+              success: function(data) {
+                // 업로드된 이미지 URL을 에디터에 삽입
+                $('#editor').summernote('insertImage', data.url);
+              },
+              error: function() {
+                alert('이미지 업로드에 실패했습니다.');
+              }
+            });
+          }
+        }
+      });
     });
   </script>
 </body>

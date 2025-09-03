@@ -7,8 +7,36 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
   <style>
-    body { background:#f6fbf9; }
-    .wwl-label{ font-size:30px; font-weight:700; color:#00c32e; }
+    body { 
+      background:#f6fbf9; 
+    }
+    .wwl-label { 
+        position: fixed;
+        top: 10px;
+        left: 16px;
+        z-index: 2000;
+        font-size: 30px;
+        font-weight: 700;
+        color: #00c32e;
+        cursor: pointer;
+    }
+    .top-menu {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+    }
+    .logout-text {
+        margin-left: 8px;
+        font-weight: 600;
+        color: #363636;
+        cursor: pointer;
+    }
+    .logout-text:hover {
+        color: #ff3860;
+    }
     .avatar-frame{ 
       width:72px; height:72px; border-radius:50%; 
       background-size:cover; background-position:center; 
@@ -19,21 +47,23 @@
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
     }
+    /* 메인 컨테이너 상단 마진 */
+    .section {
+        margin-top: 80px;
+        padding-top: 1rem;
+    }
   </style>
 </head>
 <body>
-  <!-- 상단 고정 네비게이션 -->
-  <nav class="navbar is-white has-shadow">
-    <div class="navbar-brand">
-      <a class="navbar-item wwl-label">WeeklyWeLearned</a>
-    </div>
-    <div class="navbar-end">
-      <div class="navbar-item">
-        <a href="#mypage" class="button is-primary">마이페이지</a>
-        <span class="ml-3 has-text-weight-semibold" style="cursor:pointer;">로그아웃</span>
+  <!-- 상단 메뉴 -->
+  <div class="wwl-label" onclick="handleWWLClick()">WeeklyWeLearned</div>
+  <div class="top-menu">
+      <div class="user-profile-btn" onclick="window.location.href='/my_page'" style="display: flex; align-items: center; cursor: pointer; padding: 8px 12px; background: #e8f5e8; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-right: 10px;">
+          <div class="avatar-frame" style="width: 32px !important; height: 32px !important; border: 3px solid #fff !important; background-image: url('{{ '/static/profile_imgs/' + current_user.profile_img if current_user.profile_img else '/static/images/default-avatar.jpg' }}'); margin-right: 8px;"></div>
+          <span style="font-size: 14px; font-weight: 500; color: #363636;">{{ current_user.nickname }}</span>
       </div>
-    </div>
-  </nav>
+      <span class="logout-text" onclick="window.location.href='/logout'">로그아웃</span>
+  </div>
 
   <!-- 메인 컨텐츠 -->
   <section class="section">
@@ -41,11 +71,17 @@
       
       <!-- 팀 헤더 -->
       <div class="box">
-        <h1 class="title is-3">1등 팀명</h1>
-        <div class="is-flex is-align-items-center">
-          <div class="avatar-frame mr-3" style="background-image:url('images/member1.png');"></div>
-          <div class="avatar-frame mr-3" style="background-image:url('images/member2.png');"></div>
-          <div class="avatar-frame mr-3" style="background-image:url('images/member3.png');"></div>
+        <h1 class="title is-3">{{ team.teamName }}</h1>
+        <p class="subtitle is-5 has-text-grey">{{ team.description }}</p>
+        <div class="is-flex is-align-items-center" style="flex-wrap: wrap; gap: 16px;">
+          {% for member in team.members[:3] %}
+          <div class="avatar-frame mr-3" 
+               style="background-image:url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}'); {% if member.role == 'master' %}border-color: #ff9800;{% endif %}">
+          </div>
+          {% endfor %}
+          {% if team.members|length > 3 %}
+          <span class="has-text-grey">외 {{ team.members|length - 3 }}명</span>
+          {% endif %}
         </div>
       </div>
 
@@ -66,18 +102,16 @@
             </label>
         </div>
   </div>
-  
-  <p class="mt-3"><strong>깃허브 주소:</strong> <a href="#">https://github.com/team/repo</a></p>
 </div>
 
       <!-- 글쓰기 에디터 -->
       <div class="box">
         <h2 class="title is-4 mb-3">팀 블로그 글쓰기</h2>
-        <form method="POST" action="/teampagewrite" enctype="multipart/form-data">
+        <form method="POST" action="/team_post_write/{{ team.id }}" enctype="multipart/form-data">
           <div class="field">
             <label class="label">작성자</label>
             <div class="control">
-              <input class="input" type="text" name="author" placeholder="작성자 이름을 입력하세요" required>
+              <input class="input" type="text" name="author" value="{{ current_user.nickname }}" readonly>
             </div>
           </div>
           <div class="field">
@@ -102,6 +136,15 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
   <script>
+    // WWL 라벨 클릭 처리 함수
+    function handleWWLClick() {
+        if (window.location.pathname === '/main_page') {
+            window.location.reload();
+        } else {
+            window.location.href = '/main_page';
+        }
+    }
+
     $(document).ready(function() {
       $('#editor').summernote({
         height: 400,
