@@ -65,7 +65,7 @@
                                             {% for member in team.members[:3] %}
                                             <div class="avatar-frame mr-2" 
                                                  title="{{ member.nickname }} ({{ member.role }})"
-                                                 style="background-image: url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}');">
+                                                 style="background-image: url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}'); {% if member.role == 'master' %}border-color: #ff9800;{% endif %}">
                                             </div>
                                             {% endfor %}
                                             {% if team.member_count > 3 %}

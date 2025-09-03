@@ -95,18 +95,20 @@
       </div>
       
       <!-- 팀 멤버 사진 및 이름 -->
-      <div class="is-flex is-align-items-center mb-4" style="flex-wrap: wrap; gap: 15px;">
+      <div class="is-flex mb-4" style="flex-wrap: wrap; gap: 20px;">
         {% for member in team.members %}
-        <div style="text-align:center;">
+        <div style="text-align:center; min-width: 80px;">
           <div class="avatar-frame" 
-               style="background-image:url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}'); width: 60px; height: 60px;">
+               style="background-image:url('{{ '/static/profile_imgs/' + member.profile_img if member.profile_img else '/static/images/default-avatar.jpg' }}'); width: 60px; height: 60px; margin: 0 auto; {% if member.role == 'master' %}border-color: #ff9800;{% endif %}">
           </div>
-          <p class="mt-2 is-size-7">
-            {{ member.nickname }}
+          <p class="mt-2 is-size-7 has-text-weight-medium">{{ member.nickname }}</p>
+          <div style="height: 24px; display: flex; align-items: center; justify-content: center;">
             {% if member.role == 'master' %}
-            <span class="tag is-small is-primary">팀장</span>
+            <span class="tag is-small is-warning">팀장</span>
+            {% elif member.role == 'admin' %}
+            <span class="tag is-small is-primary">관리자</span>
             {% endif %}
-          </p>
+          </div>
         </div>
         {% endfor %}
       </div>
