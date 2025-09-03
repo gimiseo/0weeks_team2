@@ -12,9 +12,9 @@
         <div class="form-box">  
         <span>주차</span>
         <select name="week" required>
-        {% for i in range(0, 21) %}
-        <option value="{{ i }}">{{ i }} week</option>
-        {% endfor %}
+            {% for i in range(0, 21) %}
+            <option value="{{ i }}" {% if i == selected_week %}selected{% endif %}>{{ i }} week</option>
+            {% endfor %}
         </select></div>
         <input type="text" name="team_name" placeholder="팀 이름" required><br>
         <input type="password" name="team_password" placeholder="팀 비밀번호" required><br>

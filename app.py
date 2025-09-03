@@ -333,7 +333,16 @@ def team_signup():
 
         return redirect(url_for("dashboard"))
 
-    return render_template("team_signup.html")
+    selected_week = request.args.get('week', type=int)
+
+    if selected_week is None:
+        # week 파라미터가 없으면 current_week 계산
+        start_date = datetime.date(2025, 8, 1)
+        current_date = datetime.date.today()
+        days_diff = (current_date - start_date).days
+        selected_week = days_diff // 7
+    
+    return render_template("team_signup.html", selected_week=selected_week)
 
 @app.route("/main_page")
 @app.route("/main_page/<int:week>")
