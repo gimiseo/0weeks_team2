@@ -414,13 +414,15 @@
           <div class="week-team">
             <div class="is-flex is-justify-content-between is-align-items-center mb-2">
               <span class="week">{{ team.week }}주차</span>
+            </div>
+            <div class="is-flex is-align-items-center mb-2">
+              <span class="team-name">{{ team.teamName }}</span>
               {% for member in team.members %}
                 {% if member.username == target_user.username and member.role == 'master' %}
-                  <span class="tag is-warning is-small">팀장</span>
+                  <span class="tag is-warning is-small ml-2">팀장</span>
                 {% endif %}
               {% endfor %}
             </div>
-            <span class="team-name">{{ team.teamName }}</span>
             <div class="mt-3">
               <div class="profile-pics">
                 {% for member in team.members[:4] %}
@@ -482,7 +484,7 @@
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
 
-    // 팀이 4개 이하면 페이지네이션 숨기기
+    // 팀이 4개 이하면 페이지네이션 숨기기하고 모든 팀 표시
     if (teams.length <= itemsPerPage) {
       teams.forEach(team => team.style.display = "block");
       const paginationControls = document.querySelector('.pagination-controls');
@@ -580,7 +582,7 @@
               <p class="has-text-weight-semibold is-size-7 ${notification.isRead ? 'has-text-grey' : 'has-text-dark'}">
                 ${authorInfo}댓글을 남겼습니다
               </p>
-              <p class="mt-1 is-size-7 ${notification.isRead ? 'has-text-grey-light' : 'has-text-grey'}">
+              <p class="mt-1 is-size-7 ${notification.isRead ? 'has-text-grey' : 'has-text-dark'}">
                 "${notification.postTitle}" 글에서
               </p>
               ${notification.commentContent ? `
