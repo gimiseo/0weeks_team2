@@ -359,14 +359,17 @@ def team_signup():
 
     selected_week = request.args.get('week', type=int)
 
-    if selected_week is None:
-        # week 파라미터가 없으면 current_week 계산
-        start_date = datetime.date(2025, 8, 1)
-        current_date = datetime.date.today()
-        days_diff = (current_date - start_date).days
-        selected_week = days_diff // 7
+    start_date = datetime.date(2025, 8, 1)
+    current_date = datetime.date.today()
+    days_diff = (current_date - start_date).days
+    current_week = days_diff // 7
     
-    return render_template("team_signup.html", selected_week=selected_week)
+    if selected_week is None:
+        selected_week = current_week
+    
+    return render_template("team_signup.html",
+                           selected_week=selected_week,
+                           current_week=current_week)
 
 @app.route("/main_page")
 @app.route("/main_page/<int:week>")
@@ -467,8 +470,15 @@ def teams_partial(week):
             "member_count": len(team_members)
         })
     
+    # 주차 계산 및 색상 결정 로직
+    start_date = datetime.date(2025, 8, 1) # 배포시 2025, 8, 29 확인
+    current_date = datetime.date.today()
+    days_diff = (current_date - start_date).days
+    current_week = days_diff // 7
+    
     return render_template("teams_partial.html", 
                          selected_week=week,
+                         current_week=current_week,
                          selected_teams=teams_with_members)
 
 @app.route("/team_join/<int:default_week>", methods=["GET", "POST"])

@@ -4,12 +4,14 @@
             Week {{ selected_week }} 팀 목록
         </h3>
         <div class="buttons" style="margin-left: auto; padding-left: 20px;">
+            {% if selected_week <= current_week %}
             <a href="/team_signup?week={{ selected_week }}" class="button is-info is-small">
                 <span class="icon is-small">
                     <i class="fas fa-plus"></i>
                 </span>
                 <span>팀 생성</span>
-            </a>
+            </a>        
+            {% endif %}
             <a href="/team_join/{{ selected_week }}" class="button is-success is-small">
                 <span class="icon is-small">
                     <i class="fas fa-user-plus"></i>

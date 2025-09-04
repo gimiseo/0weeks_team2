@@ -12,7 +12,7 @@
         <div class="form-box">  
         <span>주차</span>
         <select name="week" required>
-            {% for i in range(0, 21) %}
+            {% for i in range(0, current_week + 1) %}
             <option value="{{ i }}" {% if i == selected_week %}selected{% endif %}>{{ i }} week</option>
             {% endfor %}
         </select></div>
