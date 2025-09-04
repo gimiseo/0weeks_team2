@@ -297,6 +297,20 @@ def team_signup():
         week = int(request.form["week"])      
         team_password = request.form["team_password"]
 
+        # 현재 사용자 정보 조회
+        current_user = users_collection.find_one({"username": username})
+        if not current_user:
+            return redirect(url_for("login"))
+
+        # 해당 주차에 이미 팀에 소속되어 있는지 확인
+        existing_membership = db["teams"].find_one({
+            "week": week,
+            "members.userId": current_user["_id"]
+        })
+        
+        if existing_membership:
+            return f'{week}주차에 이미 "{existing_membership["teamName"]}" 팀에 소속되어 있습니다. 한 주차에는 하나의 팀에만 소속될 수 있습니다.'
+
         # 1. 같은 주차에 같은 이름의 팀이 있는지 확인
         existing_team_by_name = db["teams"].find_one({
             "teamName": team_name,
@@ -472,6 +486,15 @@ def team_join(default_week=None):
         if not current_user:
             return redirect(url_for("login"))
         
+        # 해당 주차에 이미 팀에 소속되어 있는지 확인
+        existing_membership = db["teams"].find_one({
+            "week": week,
+            "members.userId": current_user["_id"]
+        })
+        
+        if existing_membership:
+            return f'{week}주차에 이미 "{existing_membership["teamName"]}" 팀에 소속되어 있습니다. 한 주차에는 하나의 팀에만 소속될 수 있습니다.'
+        
         # 해당 주차의 모든 팀 조회
         teams_in_week = list(db["teams"].find({"week": week}))
         
@@ -541,6 +564,17 @@ def team_join_specific(team_id):
         current_user = users_collection.find_one({"username": username})
         if not current_user:
             return redirect(url_for("login"))
+        
+        # 해당 주차에 이미 팀에 소속되어 있는지 확인
+        existing_membership = db["teams"].find_one({
+            "week": team["week"],
+            "members.userId": current_user["_id"]
+        })
+        
+        if existing_membership:
+            return render_template("team_join_specific.html", 
+                                 team=team, 
+                                 error=f'{team["week"]}주차에 이미 "{existing_membership["teamName"]}" 팀에 소속되어 있습니다. 한 주차에는 하나의 팀에만 소속될 수 있습니다.')
         
         # 비밀번호 확인
         if not check_password_hash(team["roomPasswordHash"], team_password):
@@ -1279,59 +1313,6 @@ def delete_team():
             
     except Exception as e:
         print(f"팀 삭제 중 오류 발생: {e}")
-        return '<script>alert("팀 삭제 중 오류가 발생했습니다."); history.back();</script>'@app.route("/delete_team", methods=["POST"])
-def delete_team():
-    username = get_current_user(request)
-    if not username:
-        return redirect(url_for("login"))
-    
-    team_id = request.form.get("team_id")
-    
-    if not team_id:
-        return '<script>alert("팀 정보가 올바르지 않습니다."); history.back();</script>'
-    
-    try:
-        team_object_id = ObjectId(team_id)
-    except:
-        return '<script>alert("잘못된 팀 ID입니다."); history.back();</script>'
-    
-    # 현재 사용자 정보 조회
-    current_user = users_collection.find_one({"username": username})
-    if not current_user:
-        return redirect(url_for("login"))
-    
-    # 팀 정보 조회
-    team = db["teams"].find_one({"_id": team_object_id})
-    
-    if not team:
-        return '<script>alert("해당 팀을 찾을 수 없습니다."); history.back();</script>'
-    
-    # 현재 사용자가 팀장인지 확인
-    is_master = any(
-        member["userId"] == current_user["_id"] and member["role"] == "master"
-        for member in team.get("members", [])
-    )
-    
-    if not is_master:
-        return '<script>alert("팀장만 팀을 삭제할 수 있습니다."); history.back();</script>'
-    
-    try:
-        # 팀의 모든 이미지 삭제
-        deleted_images = delete_team_images(team)
-        if deleted_images:
-            print(f"팀 '{team['teamName']}'에서 {len(deleted_images)}개의 이미지를 삭제했습니다.")
-        
-        # 팀 삭제
-        result = db["teams"].delete_one({"_id": team_object_id})
-        
-        if result.deleted_count > 0:
-            # 성공 시 메인 페이지로 리다이렉트
-            return '<script>alert("팀이 성공적으로 삭제되었습니다."); window.location.href="/main_page";</script>'
-        else:
-            return '<script>alert("팀 삭제에 실패했습니다."); history.back();</script>'
-            
-    except Exception as e:
-        print(f"팀 삭제 중 오류 발생: {e}")
         return '<script>alert("팀 삭제 중 오류가 발생했습니다."); history.back();</script>'
     
 @app.route("/user/<username>")
@@ -1978,4 +1959,4 @@ def delete_notification():
         return jsonify({"error": f"잘못된 알림 ID입니다: {str(e)}"}), 400
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run('0.0.0.0', port=5001, debug=True)
